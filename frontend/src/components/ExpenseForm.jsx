@@ -88,6 +88,10 @@ function ExpenseForm({ members, onAddExpense }) {
     return members
   }
 
+  const calculateRoundedShare = (total, count) => {
+    return Math.ceil(total / count);
+  };
+
   return (
     <div className="member-expense-sections">
       <h2>Add Items Paid By Each Member</h2>
@@ -138,21 +142,28 @@ function ExpenseForm({ members, onAddExpense }) {
                       <div className="split-selection">
                         <label className="split-label">Who will split this cost?</label>
                         <div className="split-checkboxes">
-                          {availableMembers.map(targetMember => (
-                            <label key={targetMember._id} className="checkbox-label">
-                              <input
-                                type="checkbox"
-                                checked={(item.splitWith || []).includes(targetMember._id)}
-                                onChange={() => handleSplitToggle(member._id, index, targetMember._id)}
-                              />
-                              <span>{targetMember.name}</span>
-                              {item.amount && (item.splitWith || []).includes(targetMember._id) && (
-                                <span className="split-amount">
-                                  ₱{(parseFloat(item.amount) / (item.splitWith?.length || 1)).toFixed(2)}
-                                </span>
-                              )}
-                            </label>
-                          ))}
+                          {availableMembers.map(targetMember => {
+                            const sharePerPerson = calculateRoundedShare(
+                              item.amount,
+                              item.splitWith.length
+                            );
+                            
+                            return (
+                              <label key={targetMember._id} className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={(item.splitWith || []).includes(targetMember._id)}
+                                  onChange={() => handleSplitToggle(member._id, index, targetMember._id)}
+                                />
+                                <span>{targetMember.name}</span>
+                                {item.amount && (item.splitWith || []).includes(targetMember._id) && (
+                                  <span className="split-amount">
+                                    ₱{sharePerPerson.toFixed(2)}
+                                  </span>
+                                )}
+                              </label>
+                            )
+                          })}
                         </div>
                       </div>
                     )}
