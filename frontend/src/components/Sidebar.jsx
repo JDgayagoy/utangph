@@ -1,29 +1,34 @@
+import { Users, Plus, ClipboardList, TrendingUp, Home } from 'lucide-react'
+
 function Sidebar({ currentPage, onPageChange }) {
   const pages = [
-    { id: 'members', icon: '👥', label: 'Members' },
-    { id: 'add', icon: '➕', label: 'Add Items' },
-    { id: 'items', icon: '📋', label: 'All Items' },
-    { id: 'settlement', icon: '💰', label: 'Summary' }
+    { id: 'members', icon: Users, label: 'Members' },
+    { id: 'add', icon: Plus, label: 'Add Items' },
+    { id: 'items', icon: ClipboardList, label: 'All Items' },
+    { id: 'settlement', icon: TrendingUp, label: 'Summary' }
   ]
 
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1>🏠 UtangPH</h1>
+        <h1><Home size={32} style={{ display: 'inline-block', marginRight: '8px' }} /> UtangPH</h1>
         <p>Shared Expense Tracker</p>
       </div>
       
       <nav className="sidebar-nav">
-        {pages.map(page => (
-          <button
-            key={page.id}
-            className={`sidebar-item ${currentPage === page.id ? 'active' : ''}`}
-            onClick={() => onPageChange(page.id)}
-          >
-            <span className="sidebar-icon">{page.icon}</span>
-            <span className="sidebar-label">{page.label}</span>
-          </button>
-        ))}
+        {pages.map(page => {
+          const Icon = page.icon
+          return (
+            <button
+              key={page.id}
+              className={`sidebar-item ${currentPage === page.id ? 'active' : ''}`}
+              onClick={() => onPageChange(page.id)}
+            >
+              <span className="sidebar-icon"><Icon size={24} /></span>
+              <span className="sidebar-label">{page.label}</span>
+            </button>
+          )
+        })}
       </nav>
     </aside>
   )

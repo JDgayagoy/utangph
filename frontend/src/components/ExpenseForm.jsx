@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Plus, Save, X, UserPlus } from 'lucide-react'
 
 function ExpenseForm({ members, onAddExpense }) {
   // Create separate items state for each member
@@ -97,7 +98,7 @@ function ExpenseForm({ members, onAddExpense }) {
       {members.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="empty-icon">➕</div>
+            <div className="empty-icon"><UserPlus size={80} strokeWidth={1.5} opacity={0.4} /></div>
             <p>Add members first to start tracking expenses!</p>
             <small>Go to the Members page to add team members</small>
           </div>
@@ -138,7 +139,7 @@ function ExpenseForm({ members, onAddExpense }) {
                           onClick={() => handleRemoveItem(member._id, index)}
                           className="remove-item"
                         >
-                          ✕
+                          <X size={20} />
                         </button>
                       )}
                     </div>
@@ -177,10 +178,10 @@ function ExpenseForm({ members, onAddExpense }) {
                 
                 <div className="form-actions">
                   <button type="button" onClick={() => handleAddItem(member._id)} className="secondary">
-                    <span className="btn-icon">+</span> Add Another Item
+                    <Plus size={20} /> Add Another Item
                   </button>
                   <button type="submit" className="primary">
-                    <span className="btn-icon">💾</span> Save Items
+                    <Save size={20} /> Save Items
                   </button>
                 </div>
               </form>

@@ -5,6 +5,7 @@ import ExpenseList from './components/ExpenseList'
 import ItemsList from './components/ItemsList'
 import MemberManagement from './components/MemberManagement'
 import Sidebar from './components/Sidebar'
+import { Users, Plus, ClipboardList, TrendingUp } from 'lucide-react'
 
 function App() {
   const [expenses, setExpenses] = useState([])
@@ -80,10 +81,10 @@ function App() {
       <div className="main-container">
         <header className="app-header">
           <h1>
-            {currentPage === 'members' && '👥 Members'}
-            {currentPage === 'add' && '➕ Add Items'}
-            {currentPage === 'items' && '📋 All Items'}
-            {currentPage === 'settlement' && '💰 Summary'}
+            {currentPage === 'members' && <><Users size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> Members</>}
+            {currentPage === 'add' && <><Plus size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> Add Items</>}
+            {currentPage === 'items' && <><ClipboardList size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> All Items</>}
+            {currentPage === 'settlement' && <><TrendingUp size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> Summary</>}
           </h1>
         </header>
 

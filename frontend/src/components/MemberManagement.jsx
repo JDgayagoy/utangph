@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Users, UserPlus, Trash2 } from 'lucide-react'
 
 function MemberManagement({ members, onAddMember, onRefresh }) {
   const [name, setName] = useState('')
@@ -34,9 +35,9 @@ function MemberManagement({ members, onAddMember, onRefresh }) {
 
   return (
     <div className="members-page">
-      <div className="card members-card">
+      <div className="card">
         <div className="card-header">
-          <h2>👥 Team Members</h2>
+          <h2><Users size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Team Members</h2>
           <span className="member-count">{members.length} {members.length === 1 ? 'member' : 'members'}</span>
         </div>
         
@@ -49,19 +50,19 @@ function MemberManagement({ members, onAddMember, onRefresh }) {
             className="member-input"
           />
           <button type="submit" className="primary">
-            <span className="btn-icon">+</span> Add Member
+            <UserPlus size={20} /> Add Member
           </button>
         </form>
 
-        <div className="members-grid">
-          {members.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">👥</div>
-              <p>No members yet</p>
-              <small>Add your first member above to get started!</small>
-            </div>
-          ) : (
-            members.map(member => (
+        {members.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon"><Users size={80} strokeWidth={1.5} opacity={0.4} /></div>
+            <p>No members yet</p>
+            <small>Add your first member above to get started!</small>
+          </div>
+        ) : (
+          <div className="members-grid">
+            {members.map(member => (
               <div key={member._id} className="member-card">
                 <div className="member-avatar">{member.name.charAt(0).toUpperCase()}</div>
                 <div className="member-info">
@@ -72,12 +73,12 @@ function MemberManagement({ members, onAddMember, onRefresh }) {
                   className="member-delete"
                   title="Remove member"
                 >
-                  🗑️
+                  <Trash2 size={20} />
                 </button>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

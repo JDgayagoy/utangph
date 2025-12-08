@@ -1,3 +1,5 @@
+import { TrendingUp, ArrowRightLeft, CreditCard } from 'lucide-react'
+
 function ExpenseList({ expenses, members }) {
   // Create a matrix showing who owes whom
   const calculateOwesMatrix = () => {
@@ -56,7 +58,7 @@ function ExpenseList({ expenses, members }) {
     return (
       <div className="card">
         <div className="empty-state">
-          <div className="empty-icon">💰</div>
+          <div className="empty-icon"><TrendingUp size={80} strokeWidth={1.5} opacity={0.4} /></div>
           <p>No expenses yet</p>
           <small>Add items to see the settlement summary!</small>
         </div>
@@ -70,11 +72,11 @@ function ExpenseList({ expenses, members }) {
     <div className="settlement-page">
       <div className="card">
         <div className="card-header">
-          <h2>💰 Settlement Summary</h2>
+          <h2><TrendingUp size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Settlement Summary</h2>
         </div>
         
         <div className="summary-section">
-          <h3>💸 Who Owes Whom</h3>
+          <h3><ArrowRightLeft size={24} style={{ display: 'inline-block', marginRight: '8px' }} /> Who Owes Whom</h3>
         <div className="table-container">
           <table className="matrix-table">
             <thead>
@@ -119,7 +121,7 @@ function ExpenseList({ expenses, members }) {
 
       <div className="card">
         <div className="card-header">
-          <h2>💳 Individual Balances</h2>
+          <h2><CreditCard size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Individual Balances</h2>
         </div>
         <div className="balance-grid">
           {Object.entries(balances).map(([id, data]) => (

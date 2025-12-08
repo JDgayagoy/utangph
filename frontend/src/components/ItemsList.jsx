@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ClipboardList, Edit2, Trash2, Check, X } from 'lucide-react'
 
 function ItemsList({ expenses, members, onRefresh }) {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
@@ -88,7 +89,7 @@ function ItemsList({ expenses, members, onRefresh }) {
     return (
       <div className="card">
         <div className="empty-state">
-          <div className="empty-icon">📋</div>
+          <div className="empty-icon"><ClipboardList size={80} strokeWidth={1.5} opacity={0.4} /></div>
           <p>No items yet</p>
           <small>Add items from the "Add Items" page to see them here!</small>
         </div>
@@ -100,7 +101,7 @@ function ItemsList({ expenses, members, onRefresh }) {
     <div className="items-page">
       <div className="card items-list">
         <div className="card-header">
-          <h2>📋 All Items</h2>
+          <h2><ClipboardList size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> All Items</h2>
           <span className="item-count">{expenses.length} {expenses.length === 1 ? 'item' : 'items'}</span>
         </div>
         <div className="table-container">
@@ -185,14 +186,14 @@ function ItemsList({ expenses, members, onRefresh }) {
                           className="save-btn"
                           title="Save"
                         >
-                          \u2713
+                          <Check size={20} />
                         </button>
                         <button 
                           onClick={cancelEdit} 
                           className="cancel-btn"
                           title="Cancel"
                         >
-                          \u2715
+                          <X size={20} />
                         </button>
                       </div>
                     ) : (
@@ -202,14 +203,14 @@ function ItemsList({ expenses, members, onRefresh }) {
                           className="edit-btn"
                           title="Edit"
                         >
-                          \u270f\ufe0f
+                          <Edit2 size={18} />
                         </button>
                         <button 
                           onClick={() => deleteExpense(expense._id)} 
                           className="delete-btn"
                           title="Delete"
                         >
-                          \ud83d\uddd1\ufe0f
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     )}
