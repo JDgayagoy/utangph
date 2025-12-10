@@ -2,12 +2,12 @@ import { Users, Plus, ClipboardList, TrendingUp, Home, UserCircle, CheckSquare }
 
 function Sidebar({ currentPage, onPageChange }) {
   const pages = [
-    { id: 'members', icon: Users, label: 'Members' },
-    { id: 'add', icon: Plus, label: 'Add Items' },
-    { id: 'items', icon: ClipboardList, label: 'All Items' },
-    { id: 'payments', icon: CheckSquare, label: 'Payment Tracking' },
     { id: 'settlement', icon: TrendingUp, label: 'Summary' },
-    { id: 'person', icon: UserCircle, label: 'Person Summary' }
+    { id: 'payments', icon: CheckSquare, label: 'Payment Tracking' },
+    { id: 'items', icon: ClipboardList, label: 'All Items' },
+    { id: 'add', icon: Plus, label: 'Add Items' },
+    { id: 'person', icon: UserCircle, label: 'Person Summary' },
+    { id: 'members', icon: Users, label: 'Members' }
   ]
 
   return (

@@ -1,12 +1,16 @@
 import { useState, useMemo } from 'react'
-import { User, DollarSign, TrendingUp, TrendingDown, CheckCircle, XCircle, Filter, Search } from 'lucide-react'
+import { User, DollarSign, TrendingUp, TrendingDown, CheckCircle, XCircle, Filter, Search, Plus, CreditCard } from 'lucide-react'
 
-function PersonSummary({ expenses, members }) {
+function PersonSummary({ expenses, members, onPageChange, onRefresh }) {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
   const [selectedMember, setSelectedMember] = useState(null)
   const [filterStatus, setFilterStatus] = useState('all') // all, owes, owed, paid
   const [searchQuery, setSearchQuery] = useState('')
   const [showPaidExpenses, setShowPaidExpenses] = useState(true)
   const [showUnpaidExpenses, setShowUnpaidExpenses] = useState(true)
+  const [paymentModal, setPaymentModal] = useState(null) // { personId, personName, totalAmount, expenses }
+  const [customAmount, setCustomAmount] = useState('')
+  const [processingPayment, setProcessingPayment] = useState(false)
 
   // Helper function to get payment status
   const getPaymentStatus = (expense, memberId) => {
@@ -16,6 +20,50 @@ function PersonSummary({ expenses, members }) {
       return pId === memberId
     })
     return payment ? payment.paid : false
+  }
+
+  // Process payment
+  const processPayment = async (isFull) => {
+    if (!paymentModal || !selectedMember) return
+    
+    setProcessingPayment(true)
+    try {
+      const amount = isFull ? paymentModal.totalAmount : parseFloat(customAmount)
+      
+      if (!isFull && (!customAmount || amount <= 0 || amount > paymentModal.totalAmount)) {
+        alert('Please enter a valid amount')
+        setProcessingPayment(false)
+        return
+      }
+
+      let remainingAmount = amount
+      const expensesToPay = paymentModal.expenses.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      for (const exp of expensesToPay) {
+        if (remainingAmount <= 0) break
+        
+        const expenseAmount = exp.amount
+        if (remainingAmount >= expenseAmount) {
+          // Pay this expense in full
+          await fetch(`${API_URL}/expenses/${exp.expenseId}/payment/${selectedMember}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paid: true })
+          })
+          remainingAmount -= expenseAmount
+        }
+      }
+
+      if (onRefresh) await onRefresh()
+      setPaymentModal(null)
+      setCustomAmount('')
+      alert(`Payment of ₱${amount.toFixed(2)} processed successfully!`)
+    } catch (error) {
+      console.error('Error processing payment:', error)
+      alert('Failed to process payment. Please try again.')
+    } finally {
+      setProcessingPayment(false)
+    }
   }
 
   // Calculate detailed information for each member
@@ -111,7 +159,14 @@ function PersonSummary({ expenses, members }) {
 
     // Calculate net balance and payment status
     Object.values(summaries).forEach(summary => {
-      summary.netBalance = summary.totalPaid - summary.totalOwed
+      // Calculate total owes (what this person owes to others)
+      const totalOwes = Object.values(summary.owesTo).reduce((sum, debt) => sum + debt.amount, 0)
+      
+      // Calculate will collect (what others owe to this person)
+      const willCollect = Object.values(summary.owedBy).reduce((sum, debt) => sum + debt.amount, 0)
+      
+      // Net balance = what they will collect - what they owe
+      summary.netBalance = willCollect - totalOwes
       summary.isPaid = Math.abs(summary.netBalance) < 0.01
     })
 
@@ -263,6 +318,21 @@ function PersonSummary({ expenses, members }) {
       <div className="person-detail-panel">
         {selectedSummary ? (
           <>
+            {/* Quick Actions */}
+            <div className="quick-actions">
+              <button 
+                className="quick-action-btn"
+                onClick={() => {
+                  onPageChange('add')
+                  // Store selected member to scroll to their section
+                  sessionStorage.setItem('scrollToMember', selectedMember)
+                }}
+              >
+                <Plus size={20} />
+                Add Item for {selectedSummary.name}
+              </button>
+            </div>
+            
             {/* Summary Cards */}
             <div className="summary-cards">
               <div className="summary-card">
@@ -309,22 +379,65 @@ function PersonSummary({ expenses, members }) {
               <div className="card">
                 <h2><TrendingDown size={20} /> Owes To</h2>
                 <div className="debt-list">
-                  {Object.entries(selectedSummary.owesTo).map(([personId, data]) => (
-                    <div key={personId} className="debt-item owes">
-                      <div className="debt-header">
-                        <h3>{data.name}</h3>
-                        <span className="debt-amount">₱{data.amount.toFixed(2)}</span>
+                  {Object.entries(selectedSummary.owesTo).map(([personId, data]) => {
+                    // Find actual expense IDs for payment tracking
+                    const expensesWithIds = data.expenses.map(exp => {
+                      const foundExpense = expenses.find(e => 
+                        e.description === exp.description && 
+                        new Date(e.date).getTime() === new Date(exp.date).getTime()
+                      )
+                      return {
+                        ...exp,
+                        expenseId: foundExpense?._id
+                      }
+                    }).filter(exp => exp.expenseId)
+
+                    return (
+                      <div key={personId} className="debt-item owes">
+                        <div className="debt-header">
+                          <h3>{data.name}</h3>
+                          <span className="debt-amount">₱{data.amount.toFixed(2)}</span>
+                        </div>
+                        <div className="debt-expenses">
+                          {data.expenses.map((exp, idx) => (
+                            <div key={idx} className="debt-expense-item">
+                              <span>{exp.description}</span>
+                              <span>₱{exp.amount.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="payment-actions">
+                          <button 
+                            className="payment-btn custom"
+                            onClick={() => setPaymentModal({
+                              personId,
+                              personName: data.name,
+                              totalAmount: data.amount,
+                              expenses: expensesWithIds
+                            })}
+                          >
+                            <CreditCard size={16} />
+                            Pay Custom Amount
+                          </button>
+                          <button 
+                            className="payment-btn full"
+                            onClick={() => {
+                              setPaymentModal({
+                                personId,
+                                personName: data.name,
+                                totalAmount: data.amount,
+                                expenses: expensesWithIds
+                              })
+                              setTimeout(() => processPayment(true), 100)
+                            }}
+                          >
+                            <CheckCircle size={16} />
+                            Pay Full ₱{data.amount.toFixed(2)}
+                          </button>
+                        </div>
                       </div>
-                      <div className="debt-expenses">
-                        {data.expenses.map((exp, idx) => (
-                          <div key={idx} className="debt-expense-item">
-                            <span>{exp.description}</span>
-                            <span>₱{exp.amount.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -429,6 +542,52 @@ function PersonSummary({ expenses, members }) {
           </div>
         )}
       </div>
+
+      {/* Payment Modal */}
+      {paymentModal && (
+        <div className="modal-overlay" onClick={() => !processingPayment && setPaymentModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Pay {paymentModal.personName}</h2>
+            <div className="modal-body">
+              <div className="payment-info">
+                <p>Total Amount Owed: <strong>₱{paymentModal.totalAmount.toFixed(2)}</strong></p>
+                <p className="payment-note">Payments will be applied to oldest expenses first</p>
+              </div>
+              
+              <div className="payment-input-group">
+                <label>Enter Custom Amount:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  max={paymentModal.totalAmount}
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="payment-input"
+                  disabled={processingPayment}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  className="btn-secondary"
+                  onClick={() => setPaymentModal(null)}
+                  disabled={processingPayment}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="btn-primary"
+                  onClick={() => processPayment(false)}
+                  disabled={processingPayment || !customAmount}
+                >
+                  {processingPayment ? 'Processing...' : `Pay ₱${customAmount || '0.00'}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

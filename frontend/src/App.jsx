@@ -12,7 +12,7 @@ import { Users, Plus, ClipboardList, TrendingUp, UserCircle, CheckSquare } from 
 function App() {
   const [expenses, setExpenses] = useState([])
   const [members, setMembers] = useState([])
-  const [currentPage, setCurrentPage] = useState('members')
+  const [currentPage, setCurrentPage] = useState('settlement')
 
   useEffect(() => {
     // Fetch members and expenses from backend
@@ -127,6 +127,8 @@ function App() {
             <PersonSummary 
               expenses={expenses} 
               members={members}
+              onPageChange={setCurrentPage}
+              onRefresh={fetchExpenses}
             />
           )}
           

@@ -1,9 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Save, X, UserPlus } from 'lucide-react'
 
 function ExpenseForm({ members, onAddExpense }) {
   // Create separate items state for each member
   const [memberItems, setMemberItems] = useState({})
+
+  // Scroll to member section if coming from PersonSummary
+  useEffect(() => {
+    const scrollToMemberId = sessionStorage.getItem('scrollToMember')
+    if (scrollToMemberId) {
+      sessionStorage.removeItem('scrollToMember')
+      setTimeout(() => {
+        const element = document.getElementById(`member-section-${scrollToMemberId}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          element.classList.add('highlight-section')
+          setTimeout(() => element.classList.remove('highlight-section'), 2000)
+        }
+      }, 100)
+    }
+  }, [])
 
   // Initialize items for a member if not exists
   const getItems = (memberId) => {
@@ -93,6 +109,15 @@ function ExpenseForm({ members, onAddExpense }) {
     return Math.ceil(total / count);
   };
 
+  const scrollToMember = (memberId) => {
+    const element = document.getElementById(`member-section-${memberId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      element.classList.add('highlight-section')
+      setTimeout(() => element.classList.remove('highlight-section'), 2000)
+    }
+  }
+
   return (
     <div className="expense-form-page">
       {members.length === 0 ? (
@@ -104,12 +129,31 @@ function ExpenseForm({ members, onAddExpense }) {
           </div>
         </div>
       ) : (
-        members.map(member => {
+        <>
+          {/* Quick Navigation Tags */}
+          <div className="quick-nav-tags">
+            <h3>Jump to:</h3>
+            <div className="nav-tags-container">
+              {members.map(member => (
+                <button
+                  key={member._id}
+                  className="nav-tag"
+                  onClick={() => scrollToMember(member._id)}
+                >
+                  <div className="nav-tag-avatar">{member.name.charAt(0).toUpperCase()}</div>
+                  <span>{member.name}'s Items</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Member Sections */}
+          {members.map(member => {
           const items = getItems(member._id)
           const availableMembers = getAvailableMembers(member._id)
           
           return (
-            <div key={member._id} className="card member-section">
+            <div key={member._id} id={`member-section-${member._id}`} className="card member-section">
               <div className="section-header">
                 <div className="member-avatar-small">{member.name.charAt(0).toUpperCase()}</div>
                 <h3>{member.name}'s Items</h3>
@@ -187,7 +231,8 @@ function ExpenseForm({ members, onAddExpense }) {
               </form>
             </div>
           )
-        })
+        })}
+        </>
       )}
     </div>
   )
