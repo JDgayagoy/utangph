@@ -6,6 +6,7 @@ function PaymentTracking({ expenses, members, onRefresh }) {
   const [updatingPayment, setUpdatingPayment] = useState(null)
   const [sortBy, setSortBy] = useState('date') // date, name, amount, status
   const [filterStatus, setFilterStatus] = useState('all') // all, paid, unpaid, partial
+  const [filterPayer, setFilterPayer] = useState('all') // Filter by who paid
 
   const updatePaymentStatus = async (expenseId, memberId, currentStatus) => {
     setUpdatingPayment(`${expenseId}-${memberId}`)
@@ -56,6 +57,14 @@ function PaymentTracking({ expenses, members, onRefresh }) {
   const filteredAndSortedExpenses = useMemo(() => {
     let filtered = [...expenses]
     
+    // Apply payer filter
+    if (filterPayer !== 'all') {
+      filtered = filtered.filter(expense => {
+        const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+        return paidById === filterPayer
+      })
+    }
+    
     // Apply status filter
     if (filterStatus !== 'all') {
       filtered = filtered.filter(expense => {
@@ -84,7 +93,7 @@ function PaymentTracking({ expenses, members, onRefresh }) {
       default:
         return filtered
     }
-  }, [expenses, sortBy, filterStatus])
+  }, [expenses, sortBy, filterStatus, filterPayer])
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -204,6 +213,17 @@ function PaymentTracking({ expenses, members, onRefresh }) {
         <div className="card-header">
           <h2><Check size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Payment Tracking</h2>
           <div className="controls-group">
+            <div className="filter-row">
+              <div className="filter-group">
+                <label><Users size={16} /> Paid By:</label>
+                <select value={filterPayer} onChange={(e) => setFilterPayer(e.target.value)} className="filter-select">
+                  <option value="all">All Payers</option>
+                  {members.map(member => (
+                    <option key={member._id} value={member._id}>{member.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className="toggle-filters">
               <button 
                 className={`toggle-btn ${filterStatus === 'all' ? 'active' : ''}`}

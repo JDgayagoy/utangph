@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { ClipboardList, Edit2, Trash2, Check, X } from 'lucide-react'
+import { ClipboardList, Edit2, Trash2, Check, X, ArrowUpDown } from 'lucide-react'
 
 function ItemsList({ expenses, members, onRefresh }) {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
+  const [filterPayer, setFilterPayer] = useState('all')
+  const [filterSplitWith, setFilterSplitWith] = useState('all')
+  const [sortBy, setSortBy] = useState('date') // date, name, amount
 
   const getMemberName = (memberId) => {
     const member = members.find(m => m._id === memberId)
@@ -97,12 +100,68 @@ function ItemsList({ expenses, members, onRefresh }) {
     )
   }
 
+  // Filter and sort expenses
+  const filteredAndSortedExpenses = (() => {
+    // First filter
+    let filtered = expenses.filter(expense => {
+      const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+      const payerMatch = filterPayer === 'all' || paidById === filterPayer
+      
+      const splitMatch = filterSplitWith === 'all' || expense.splitWith.some(member => {
+        const memberId = typeof member === 'object' ? member._id : member
+        return memberId === filterSplitWith
+      })
+      
+      return payerMatch && splitMatch
+    })
+    
+    // Then sort
+    switch(sortBy) {
+      case 'date':
+        return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
+      case 'name':
+        return filtered.sort((a, b) => a.description.localeCompare(b.description))
+      case 'amount':
+        return filtered.sort((a, b) => b.amount - a.amount)
+      default:
+        return filtered
+    }
+  })()
+
   return (
     <div className="items-page">
       <div className="card items-list">
         <div className="card-header">
           <h2><ClipboardList size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> All Items</h2>
-          <span className="item-count">{expenses.length} {expenses.length === 1 ? 'item' : 'items'}</span>
+          <div className="header-controls">
+            <div className="filter-group">
+              <label>Paid By:</label>
+              <select value={filterPayer} onChange={(e) => setFilterPayer(e.target.value)} className="filter-select">
+                <option value="all">All Payers</option>
+                {members.map(member => (
+                  <option key={member._id} value={member._id}>{member.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Split With:</label>
+              <select value={filterSplitWith} onChange={(e) => setFilterSplitWith(e.target.value)} className="filter-select">
+                <option value="all">All Members</option>
+                {members.map(member => (
+                  <option key={member._id} value={member._id}>{member.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label><ArrowUpDown size={16} /> Sort:</label>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="filter-select">
+                <option value="date">Date (Newest)</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="amount">Amount (High-Low)</option>
+              </select>
+            </div>
+            <span className="item-count">{filteredAndSortedExpenses.length} {filteredAndSortedExpenses.length === 1 ? 'item' : 'items'}</span>
+          </div>
         </div>
         <div className="table-container">
         <table className="expense-table">
@@ -117,7 +176,7 @@ function ItemsList({ expenses, members, onRefresh }) {
             </tr>
           </thead>
           <tbody>
-            {expenses.map(expense => {
+            {filteredAndSortedExpenses.map(expense => {
               const isEditing = editingId === expense._id
               const sharePerPerson = calculateRoundedShare(
                 isEditing ? editForm.amount : expense.amount,
