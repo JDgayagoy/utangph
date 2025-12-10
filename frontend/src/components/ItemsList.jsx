@@ -153,8 +153,7 @@ function ItemsList({ expenses, members, onRefresh }) {
                         className="edit-input edit-amount"
                       />
                     ) : (
-                      `
-                      \u20b1${expense.amount.toFixed(2)}`
+                      `₱${expense.amount.toFixed(2)}`
                     )}
                   </td>
                   <td data-label="Split Between">
@@ -176,7 +175,7 @@ function ItemsList({ expenses, members, onRefresh }) {
                     )}
                   </td>
                   <td data-label="Each Pays" className="amount">
-                    \u20b1{sharePerPerson.toFixed(2)}
+                    ₱{sharePerPerson.toFixed(2)}
                   </td>
                   <td data-label="Actions">
                     {isEditing ? (

@@ -117,6 +117,7 @@ function App() {
             <ExpenseList 
               expenses={expenses} 
               members={members}
+              onRefresh={fetchExpenses}
             />
           )}
           

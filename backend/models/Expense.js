@@ -24,7 +24,21 @@ const expenseSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
-  }
+  },
+  payments: [{
+    memberId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Member',
+      required: true
+    },
+    paid: {
+      type: Boolean,
+      default: false
+    },
+    paidDate: {
+      type: Date
+    }
+  }]
 }, {
   timestamps: true
 })
