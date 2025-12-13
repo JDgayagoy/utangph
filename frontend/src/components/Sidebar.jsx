@@ -1,5 +1,4 @@
-import { Users, Plus, ClipboardList, TrendingUp, Home, UserCircle, CheckSquare } from 'lucide-react'
-
+import { Users, Plus, ClipboardList, TrendingUp, Home, UserCircle, CheckSquare, QrCode } from 'lucide-react'
 function Sidebar({ currentPage, onPageChange }) {
   const pages = [
     { id: 'settlement', icon: TrendingUp, label: 'Summary' },
@@ -7,16 +6,15 @@ function Sidebar({ currentPage, onPageChange }) {
     { id: 'items', icon: ClipboardList, label: 'All Items' },
     { id: 'add', icon: Plus, label: 'Add Items' },
     { id: 'person', icon: UserCircle, label: 'Person Summary' },
-    { id: 'members', icon: Users, label: 'Members' }
+    { id: 'members', icon: Users, label: 'Members' },
+    { id: 'qrcodes', icon: QrCode, label: 'QR Codes' }
   ]
-
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
         <h1><Home size={32} style={{ display: 'inline-block', marginRight: '8px' }} /> UtangPH</h1>
         <p>Shared Expense Tracker</p>
       </div>
-      
       <nav className="sidebar-nav">
         {pages.map(page => {
           const Icon = page.icon
@@ -33,7 +31,8 @@ function Sidebar({ currentPage, onPageChange }) {
         })}
       </nav>
     </aside>
-  )
-}
-
+  )     
+}       
 export default Sidebar
+
+
