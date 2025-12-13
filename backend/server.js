@@ -37,9 +37,9 @@ export default app
 
 // Only start server if not in serverless environment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  const server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-  })
+  // const server = app.listen(PORT, () => {
+  //   console.log(`Server running on port ${PORT}`)
+  // })
 
   server.on('error', (err) => {
     if (err && err.code === 'EADDRINUSE') {
