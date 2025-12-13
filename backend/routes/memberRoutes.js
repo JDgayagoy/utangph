@@ -1,8 +1,23 @@
 import express from 'express'
+import multer from 'multer'
 import Member from '../models/Member.js'
 import Expense from '../models/Expense.js'
 
 const router = express.Router()
+
+// Configure multer for memory storage
+const storage = multer.memoryStorage()
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only image files are allowed'))
+    }
+  }
+})
 
 // Get all members
 router.get('/', async (req, res) => {
@@ -118,6 +133,89 @@ router.delete('/:id', async (req, res) => {
 
     await member.deleteOne()
     res.json({ message: 'Member deleted' })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+// Add QR code to member
+router.post('/:id/qrcodes', upload.single('image'), async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+
+    const { label } = req.body
+    
+    if (!label || !req.file) {
+      return res.status(400).json({ message: 'Label and image are required' })
+    }
+
+    // Convert image to base64
+    const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+
+    member.qrCodes.push({ label, imageData })
+    await member.save()
+    
+    res.status(201).json(member)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Get all QR codes for a member
+router.get('/:id/qrcodes', async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+    
+    res.json(member.qrCodes)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+// Update QR code
+router.put('/:id/qrcodes/:qrId', upload.single('image'), async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+
+    const qrCode = member.qrCodes.id(req.params.qrId)
+    if (!qrCode) {
+      return res.status(404).json({ message: 'QR code not found' })
+    }
+
+    if (req.body.label) qrCode.label = req.body.label
+    if (req.file) {
+      const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+      qrCode.imageData = imageData
+    }
+
+    await member.save()
+    res.json(member)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Delete QR code
+router.delete('/:id/qrcodes/:qrId', async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+
+    member.qrCodes.pull(req.params.qrId)
+    await member.save()
+    
+    res.json(member)
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
