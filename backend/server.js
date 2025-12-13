@@ -21,6 +21,9 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 
+// Ignore favicon requests
+app.get('/favicon.ico', (req, res) => res.status(204).end())
+
 // Connect to MongoDB
 connectDB()
 

@@ -31,7 +31,7 @@
 1. **Update Frontend Environment Variable**
    - In `frontend/.env`, update:
      ```
-     VITE_API_URL=https://your-backend.vercel.app/api
+     VITE_API_URL=https://utangphbackend.vercel.app/api
      ```
 
 2. **Push frontend to GitHub**
@@ -50,13 +50,13 @@
    - Import your frontend GitHub repository
    - Vercel will auto-detect Vite
    - Add Environment Variable:
-     - `VITE_API_URL`: `https://your-backend.vercel.app/api`
+     - `VITE_API_URL`: `https://utangphbackend.vercel.app/api`
    - Deploy!
 
 4. **Update Backend CORS**
    - Go back to your backend Vercel project
    - Add environment variable:
-     - `FRONTEND_URL`: `https://your-frontend.vercel.app`
+     - `FRONTEND_URL`: `https://utangph-oxgv01ehu-dubuu03s-projects.vercel.app`
    - Redeploy backend
 
 ## Local Development
@@ -81,13 +81,13 @@ npm run dev
 ```
 MONGODB_URI=mongodb+srv://...
 PORT=3000
-FRONTEND_URL=https://your-frontend.vercel.app
+FRONTEND_URL=https://utangph-oxgv01ehu-dubuu03s-projects.vercel.app
 ```
 
 ### Frontend (.env)
 ```
 VITE_API_URL=http://localhost:3000/api  # For local dev
-# VITE_API_URL=https://your-backend.vercel.app/api  # For production
+# VITE_API_URL=https://utangphbackend.vercel.app/api  # For production
 ```
 
 ## MongoDB Atlas Setup
