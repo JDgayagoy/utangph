@@ -9,6 +9,7 @@ router.get('/', async (req, res) => {
     const expenses = await Expense.find()
       .populate('paidBy', 'name')
       .populate('splitWith', 'name')
+      .populate('payments.memberId', 'name')
       .sort({ date: -1 })
     res.json(expenses)
   } catch (error) {
@@ -127,6 +128,47 @@ router.get('/settlements/summary', async (req, res) => {
     res.json(balances)
   } catch (error) {
     res.status(500).json({ message: error.message })
+  }
+})
+
+// Update payment status for a member in an expense
+router.patch('/:id/payment/:memberId', async (req, res) => {
+  try {
+    const expense = await Expense.findById(req.params.id)
+    if (!expense) {
+      return res.status(404).json({ message: 'Expense not found' })
+    }
+
+    const memberId = req.params.memberId
+    const { paid } = req.body
+
+    // Find existing payment record
+    const paymentIndex = expense.payments.findIndex(
+      p => p.memberId.toString() === memberId
+    )
+
+    if (paymentIndex >= 0) {
+      // Update existing payment record
+      expense.payments[paymentIndex].paid = paid
+      expense.payments[paymentIndex].paidDate = paid ? new Date() : null
+    } else {
+      // Add new payment record
+      expense.payments.push({
+        memberId,
+        paid,
+        paidDate: paid ? new Date() : null
+      })
+    }
+
+    await expense.save()
+    const populatedExpense = await Expense.findById(expense._id)
+      .populate('paidBy', 'name')
+      .populate('splitWith', 'name')
+      .populate('payments.memberId', 'name')
+    
+    res.json(populatedExpense)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
   }
 })
 

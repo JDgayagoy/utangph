@@ -1,6 +1,21 @@
-import { TrendingUp, ArrowRightLeft, CreditCard } from 'lucide-react'
+import { TrendingUp, ArrowRightLeft, CreditCard, BarChart3 } from 'lucide-react'
+import { useMemo } from 'react'
 
-function ExpenseList({ expenses, members }) {
+function ExpenseList({ expenses, members, onRefresh }) {
+  // Helper function to check if a payment has been made
+  const getPaymentStatus = (expense, memberId) => {
+    if (!expense.payments || !Array.isArray(expense.payments)) {
+      return false
+    }
+    
+    const payment = expense.payments.find(p => {
+      const paymentMemberId = typeof p.memberId === 'object' ? p.memberId._id : p.memberId
+      return paymentMemberId === memberId
+    })
+    
+    return payment ? payment.paid : false
+  }
+
   // Create a matrix showing who owes whom
   const calculateOwesMatrix = () => {
     const balances = {}
@@ -10,7 +25,7 @@ function ExpenseList({ expenses, members }) {
       balances[member._id] = { name: member.name, balance: 0 }
     })
 
-    // Calculate balances from expenses
+    // Calculate balances from expenses, considering payments
     expenses.forEach(expense => {
       const sharePerPerson = expense.amount / expense.splitWith.length
       const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
@@ -38,15 +53,24 @@ function ExpenseList({ expenses, members }) {
       })
     })
 
-    // Calculate who owes whom from expenses
+    // Calculate who owes whom from expenses, EXCLUDING paid amounts
     expenses.forEach(expense => {
       const sharePerPerson = expense.amount / expense.splitWith.length
       const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
       
       expense.splitWith.forEach(member => {
         const memberId = typeof member === 'object' ? member._id : member
+        
+        // Only add to debt if:
+        // 1. Not the payer
+        // 2. Payment hasn't been marked as complete
         if (memberId !== paidById && matrix[memberId] && matrix[memberId][paidById] !== undefined) {
-          matrix[memberId][paidById] += sharePerPerson
+          const isPaid = getPaymentStatus(expense, memberId)
+          
+          // If not paid, add to debt
+          if (!isPaid) {
+            matrix[memberId][paidById] += sharePerPerson
+          }
         }
       })
     })
@@ -86,11 +110,24 @@ function ExpenseList({ expenses, members }) {
                   <th key={member._id}>{member.name}</th>
                 ))}
                 <th>Total Owes</th>
+                <th>Will Collect</th>
+                <th className="net-balance-header">Net Balance</th>
               </tr>
             </thead>
             <tbody>
               {members.map(fromMember => {
                 const totalOwes = Object.values(matrix[fromMember._id] || {}).reduce((sum, val) => sum + val, 0)
+                
+                // Calculate how much this person will collect (what others owe them)
+                let willCollect = 0
+                members.forEach(otherMember => {
+                  if (otherMember._id !== fromMember._id) {
+                    willCollect += matrix[otherMember._id]?.[fromMember._id] || 0
+                  }
+                })
+                
+                const netBalance = willCollect - totalOwes
+                
                 return (
                   <tr key={fromMember._id}>
                     <td className="person-name"><strong>{fromMember.name}</strong></td>
@@ -106,8 +143,20 @@ function ExpenseList({ expenses, members }) {
                         </td>
                       )
                     })}
-                    <td className="total-cell" data-label="Total">
-                      <strong>₱{totalOwes.toFixed(0)}</strong>
+                    <td className="total-cell owes-cell" data-label="Total Owes">
+                      <strong style={{ color: totalOwes > 0 ? '#ef4444' : '#64748b' }}>
+                        ₱{totalOwes.toFixed(0)}
+                      </strong>
+                    </td>
+                    <td className="total-cell collect-cell" data-label="Will Collect">
+                      <strong style={{ color: willCollect > 0 ? '#10b981' : '#64748b' }}>
+                        ₱{willCollect.toFixed(0)}
+                      </strong>
+                    </td>
+                    <td className={`total-cell net-balance-cell ${netBalance >= 0 ? 'positive' : 'negative'}`} data-label="Net Balance">
+                      <strong>
+                        {netBalance >= 0 ? '+' : ''}₱{netBalance.toFixed(0)}
+                      </strong>
                     </td>
                   </tr>
                 )
@@ -117,6 +166,77 @@ function ExpenseList({ expenses, members }) {
         </div>
       </div>
 
+      </div>
+
+      {/* Simplified Settlement Table */}
+      <div className="card">
+        <div className="card-header">
+          <h2><ArrowRightLeft size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Simplified Settlements</h2>
+        </div>
+        <div className="summary-section">
+          <p className="settlement-description">Net amounts after offsetting mutual debts (who owes whom)</p>
+          <div className="settlement-legend">
+            <div className="legend-item">
+              <span className="legend-box owes"></span>
+              <span>Red cells = The person in that ROW owes money to the person in that COLUMN</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-box receives"></span>
+              <span>Green cells = The person in that ROW will RECEIVE money from the person in that COLUMN</span>
+            </div>
+          </div>
+          <div className="table-container">
+            <table className="settlement-matrix-table">
+              <thead>
+                <tr>
+                  <th>Person</th>
+                  {members.map(member => (
+                    <th key={member._id}>{member.name}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {members.map(fromMember => {
+                  return (
+                    <tr key={fromMember._id}>
+                      <td className="person-name"><strong>{fromMember.name}</strong></td>
+                      {members.map(toMember => {
+                        if (fromMember._id === toMember._id) {
+                          return <td key={toMember._id} className="same-person">-</td>
+                        }
+
+                        const fromOwesTo = matrix[fromMember._id]?.[toMember._id] || 0
+                        const toOwesFrom = matrix[toMember._id]?.[fromMember._id] || 0
+                        const netAmount = fromOwesTo - toOwesFrom
+
+                        // Show net amount only if fromMember owes toMember after offset
+                        if (netAmount > 0.01) {
+                          return (
+                            <td key={toMember._id} className="net-debt-cell owes">
+                              ₱{netAmount.toFixed(2)}
+                            </td>
+                          )
+                        } else if (netAmount < -0.01) {
+                          return (
+                            <td key={toMember._id} className="net-debt-cell receives">
+                              ₱{Math.abs(netAmount).toFixed(2)}
+                            </td>
+                          )
+                        } else {
+                          return (
+                            <td key={toMember._id} className="net-debt-cell settled">
+                              ✓
+                            </td>
+                          )
+                        }
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div className="card">
@@ -138,6 +258,90 @@ function ExpenseList({ expenses, members }) {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Statistics Section */}
+      <div className="card">
+        <div className="card-header">
+          <h2><BarChart3 size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Statistics</h2>
+        </div>
+        <div className="statistics-grid">
+          <div className="stat-box">
+            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+              <TrendingUp size={32} />
+            </div>
+            <div className="stat-details">
+              <h4>Total Expenses</h4>
+              <p className="stat-number">{expenses.length}</p>
+              <span className="stat-description">Items tracked</span>
+            </div>
+          </div>
+          
+          <div className="stat-box">
+            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+              <CreditCard size={32} />
+            </div>
+            <div className="stat-details">
+              <h4>Total Amount</h4>
+              <p className="stat-number">₱{expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}</p>
+              <span className="stat-description">All expenses</span>
+            </div>
+          </div>
+          
+          <div className="stat-box">
+            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+              <ArrowRightLeft size={32} />
+            </div>
+            <div className="stat-details">
+              <h4>Active Members</h4>
+              <p className="stat-number">{members.length}</p>
+              <span className="stat-description">Participants</span>
+            </div>
+          </div>
+          
+          <div className="stat-box">
+            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)' }}>
+              <BarChart3 size={32} />
+            </div>
+            <div className="stat-details">
+              <h4>Average per Person</h4>
+              <p className="stat-number">
+                ₱{members.length > 0 ? (expenses.reduce((sum, exp) => sum + exp.amount, 0) / members.length).toFixed(2) : '0.00'}
+              </p>
+              <span className="stat-description">Per member</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Balance Distribution Chart */}
+        <div className="balance-distribution">
+          <h3>Balance Distribution</h3>
+          <div className="distribution-bars">
+            {Object.entries(balances)
+              .sort((a, b) => b[1].balance - a[1].balance)
+              .map(([id, data]) => {
+                const maxBalance = Math.max(...Object.values(balances).map(b => Math.abs(b.balance)))
+                const barWidth = maxBalance > 0 ? (Math.abs(data.balance) / maxBalance) * 100 : 0
+                
+                return (
+                  <div key={id} className="distribution-bar-item">
+                    <span className="distribution-name">{data.name}</span>
+                    <div className="distribution-bar-container">
+                      <div 
+                        className={`distribution-bar ${data.balance >= 0 ? 'positive' : 'negative'}`}
+                        style={{ width: `${barWidth}%` }}
+                      >
+                        <span className="distribution-value">
+                          {data.balance >= 0 ? '+' : ''}₱{data.balance.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            }
+          </div>
         </div>
       </div>
     </div>
