@@ -1,25 +1,35 @@
 import { useState, useMemo } from 'react'
-import { Check, ArrowUpDown, CheckCircle, XCircle, TrendingUp, Users, DollarSign } from 'lucide-react'
+import {
+  Check,
+  ArrowUpDown,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  Users,
+  DollarSign
+} from 'lucide-react'
 
-function PaymentTracking({ expenses, members, onRefresh }) {
+function PaymentTracking({ expenses = [], members = [], onRefresh }) {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+
   const [updatingPayment, setUpdatingPayment] = useState(null)
-  const [sortBy, setSortBy] = useState('date') // date, name, amount, status
-  const [filterStatus, setFilterStatus] = useState('all') // all, paid, unpaid, partial
-  const [filterPayer, setFilterPayer] = useState('all') // Filter by who paid
+  const [sortBy, setSortBy] = useState('date')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterPayer, setFilterPayer] = useState('all')
 
   const updatePaymentStatus = async (expenseId, memberId, currentStatus) => {
     setUpdatingPayment(`${expenseId}-${memberId}`)
     try {
-      const response = await fetch(`${API_URL}/expenses/${expenseId}/payment/${memberId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paid: !currentStatus })
-      })
-      if (response.ok) {
-        if (onRefresh) {
-          await onRefresh()
+      const response = await fetch(
+        `${API_URL}/expenses/${expenseId}/payment/${memberId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paid: !currentStatus })
         }
+      )
+      if (response.ok && onRefresh) {
+        await onRefresh()
       }
     } catch (error) {
       console.error('Error updating payment status:', error)
@@ -30,75 +40,78 @@ function PaymentTracking({ expenses, members, onRefresh }) {
   }
 
   const getPaymentStatus = (expense, memberId) => {
-    if (!expense.payments || expense.payments.length === 0) return false
-    const payment = expense.payments.find(p => {
-      const pId = typeof p.memberId === 'object' ? p.memberId._id : p.memberId
-      return pId === memberId
-    })
-    return payment ? payment.paid : false
+    if (!expense?.payments?.length) return false
+
+    const payment = expense.payments.find(
+      p => (p?.memberId?._id ?? p?.memberId) === memberId
+    )
+
+    return payment?.paid ?? false
   }
 
   const getExpensePaymentProgress = (expense) => {
-    const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+    if (!expense?.splitWith?.length) {
+      return { paidCount: 0, totalCount: 0, percentage: 0 }
+    }
+
+    const paidById = expense.paidBy?._id ?? expense.paidBy
     let paidCount = 0
-    let totalCount = expense.splitWith.length
-    
-    expense.splitWith.forEach(member => {
-      const memberId = typeof member === 'object' ? member._id : member
+    const totalCount = expense.splitWith.length
+
+    expense.splitWith.filter(Boolean).forEach(member => {
+      const memberId = member?._id ?? member
       if (memberId === paidById || getPaymentStatus(expense, memberId)) {
         paidCount++
       }
     })
-    
-    return { paidCount, totalCount, percentage: (paidCount / totalCount) * 100 }
+
+    return {
+      paidCount,
+      totalCount,
+      percentage: totalCount > 0 ? (paidCount / totalCount) * 100 : 0
+    }
   }
 
-  // Filter and sort expenses
   const filteredAndSortedExpenses = useMemo(() => {
     let filtered = [...expenses]
-    
-    // Apply payer filter
+
     if (filterPayer !== 'all') {
-      filtered = filtered.filter(expense => {
-        const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
-        return paidById === filterPayer
-      })
+      filtered = filtered.filter(
+        exp => (exp?.paidBy?._id ?? exp?.paidBy) === filterPayer
+      )
     }
-    
-    // Apply status filter
+
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(expense => {
-        const progress = getExpensePaymentProgress(expense)
-        if (filterStatus === 'paid') return progress.percentage === 100
-        if (filterStatus === 'unpaid') return progress.percentage === 0
-        if (filterStatus === 'partial') return progress.percentage > 0 && progress.percentage < 100
+      filtered = filtered.filter(exp => {
+        const pct = getExpensePaymentProgress(exp).percentage
+        if (filterStatus === 'paid') return pct === 100
+        if (filterStatus === 'unpaid') return pct === 0
+        if (filterStatus === 'partial') return pct > 0 && pct < 100
         return true
       })
     }
-    
-    // Apply sorting
-    switch(sortBy) {
+
+    switch (sortBy) {
       case 'date':
         return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
       case 'name':
-        return filtered.sort((a, b) => a.description.localeCompare(b.description))
+        return filtered.sort((a, b) =>
+          a.description.localeCompare(b.description)
+        )
       case 'amount':
         return filtered.sort((a, b) => b.amount - a.amount)
       case 'status':
-        return filtered.sort((a, b) => {
-          const progressA = getExpensePaymentProgress(a).percentage
-          const progressB = getExpensePaymentProgress(b).percentage
-          return progressA - progressB
-        })
+        return filtered.sort(
+          (a, b) =>
+            getExpensePaymentProgress(a).percentage -
+            getExpensePaymentProgress(b).percentage
+        )
       default:
         return filtered
     }
   }, [expenses, sortBy, filterStatus, filterPayer])
 
-  // Calculate statistics
   const statistics = useMemo(() => {
-    let totalExpenses = expenses.length
-    let totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0)
     let fullyPaid = 0
     let partiallyPaid = 0
     let unpaid = 0
@@ -106,30 +119,32 @@ function PaymentTracking({ expenses, members, onRefresh }) {
 
     expenses.forEach(expense => {
       const progress = getExpensePaymentProgress(expense)
-      const sharePerPerson = expense.amount / expense.splitWith.length
-      
+      const share = expense.amount / (expense.splitWith?.length || 1)
+      const paidById = expense.paidBy?._id ?? expense.paidBy
+
       if (progress.percentage === 100) fullyPaid++
       else if (progress.percentage > 0) partiallyPaid++
       else unpaid++
 
-      // Calculate paid amount
-      expense.splitWith.forEach(member => {
-        const memberId = typeof member === 'object' ? member._id : member
-        const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+      expense.splitWith?.filter(Boolean).forEach(member => {
+        const memberId = member?._id ?? member
         if (memberId === paidById || getPaymentStatus(expense, memberId)) {
-          totalPaidAmount += sharePerPerson
+          totalPaidAmount += share
         }
       })
     })
 
+    const totalAmount = expenses.reduce((s, e) => s + e.amount, 0)
+
     return {
-      totalExpenses,
+      totalExpenses: expenses.length,
       totalAmount,
       fullyPaid,
       partiallyPaid,
       unpaid,
       totalPaidAmount,
-      percentagePaid: totalAmount > 0 ? (totalPaidAmount / totalAmount) * 100 : 0
+      percentagePaid:
+        totalAmount > 0 ? (totalPaidAmount / totalAmount) * 100 : 0
     }
   }, [expenses])
 

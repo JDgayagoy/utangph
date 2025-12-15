@@ -2199,9 +2199,11 @@ button.secondary:active {
     opacity: 1;
   }
 
-  
   .sidebar-label {
-    display: none;
+    visibility: hidden;
+    width: 0;
+    position: absolute;
+    left:0;
   }
 
   .main-container {
