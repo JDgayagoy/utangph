@@ -1,28 +1,25 @@
-function SettlementSummary({ expenses, members }) {
+function SettlementSummary({ expenses = [], members = [] }) {
   const calculateBalances = () => {
-    // Initialize balances for each member
     const balances = {}
-    members.forEach(member => {
+
+    members.filter(Boolean).forEach(member => {
+      if (!member?._id) return
       balances[member._id] = { name: member.name, balance: 0 }
     })
 
-    // Calculate balances
     expenses.forEach(expense => {
+      if (!expense?.splitWith?.length) return
+
       const sharePerPerson = expense.amount / expense.splitWith.length
-      
-      // Get paidBy ID (handle both populated and non-populated)
-      const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
-      
-      // The person who paid gets credited
-      if (balances[paidById]) {
+      const paidById = expense.paidBy?._id ?? expense.paidBy
+
+      if (paidById && balances[paidById]) {
         balances[paidById].balance += expense.amount
       }
-      
-      // Everyone who splits the expense gets debited
-      expense.splitWith.forEach(member => {
-        // Handle both populated and non-populated
-        const memberId = typeof member === 'object' ? member._id : member
-        if (balances[memberId]) {
+
+      expense.splitWith.filter(Boolean).forEach(member => {
+        const memberId = member?._id ?? member
+        if (memberId && balances[memberId]) {
           balances[memberId].balance -= sharePerPerson
         }
       })
@@ -30,7 +27,7 @@ function SettlementSummary({ expenses, members }) {
 
     return balances
   }
-
+  
   const calculateSettlements = () => {
     const balances = calculateBalances()
     const settlements = []
