@@ -1070,6 +1070,10 @@ button.secondary:active {
   color: #dc2626;
 }
 
+.settlement-matrix-table td.net-debt-cell.owes:hover {
+  background: linear-gradient(to bottom, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+}
+
 .settlement-matrix-table td.net-debt-cell.receives {
   background: linear-gradient(to bottom, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
   color: #059669;
@@ -1352,6 +1356,43 @@ button.secondary:active {
   color: #dc2626;
   font-weight: 800;
   font-size: var(--font-size-lg);
+}
+
+.cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.pay-btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.pay-btn-small:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.pay-btn-small:active {
+  transform: scale(1);
+}
+
+.net-debt-cell .cell-content {
+  justify-content: center;
+  gap: var(--space-3);
 }
 
 .matrix-table .total-cell {
@@ -2154,6 +2195,13 @@ button.secondary:active {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
+.settlement-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
 .settlement-amount-large {
   font-size: 2rem;
   font-weight: 900;
@@ -2165,6 +2213,33 @@ button.secondary:active {
   border-radius: var(--radius-lg);
   border: 2px solid var(--color-primary-light);
   box-shadow: var(--shadow-sm);
+}
+
+.mark-paid-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  white-space: nowrap;
+}
+
+.mark-paid-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.mark-paid-btn:active {
+  transform: translateY(0);
 }
 
 /* Balances List */
@@ -3049,6 +3124,102 @@ button.secondary:active {
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-gray-900);
+}
+
+.modal-close {
+  background: transparent;
+  border: 2px solid var(--color-gray-300);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--color-gray-600);
+}
+
+.modal-close:hover {
+  background: var(--color-error-50);
+  border-color: var(--color-error-300);
+  color: var(--color-error-600);
+}
+
+.modal-question {
+  text-align: center;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.payment-details {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row span {
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+}
+
+.detail-row strong {
+  color: var(--color-gray-900);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+}
+
+.modal-note {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-primary-light);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  align-items: flex-start;
+  color: var(--color-primary-dark);
+}
+
+.modal-note p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 /* Expense Filters */
@@ -4292,9 +4463,21 @@ button.secondary:active {
     transform: rotate(90deg);
   }
 
+  .settlement-actions-group {
+    align-items: stretch;
+    gap: var(--space-4);
+  }
+
   .settlement-amount-large {
     text-align: center;
     font-size: 1.5rem;
+  }
+
+  .mark-paid-btn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--space-4);
+    font-size: var(--font-size-base);
   }
 
   .balance-amount {

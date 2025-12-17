@@ -1,6 +1,24 @@
-import { TrendingUp, ArrowDown, ArrowUp, DollarSign, Users } from 'lucide-react'
+import { TrendingUp, ArrowDown, ArrowUp, DollarSign, Users, CheckCircle, X } from 'lucide-react'
+import { useState } from 'react'
 
-function SettlementSummary({ expenses, members }) {
+function SettlementSummary({ expenses, members, onRefresh }) {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+  const [paymentModal, setPaymentModal] = useState(null)
+  const [processing, setProcessing] = useState(false)
+
+  // Helper function to check if a payment has been made
+  const getPaymentStatus = (expense, memberId) => {
+    if (!expense.payments || !Array.isArray(expense.payments)) {
+      return false
+    }
+    const payment = expense.payments.find(p => {
+      if (!p || !p.memberId) return false
+      const paymentMemberId = typeof p.memberId === 'object' && p.memberId !== null ? p.memberId._id : p.memberId
+      return paymentMemberId === memberId
+    })
+    return payment ? payment.paid : false
+  }
+
   const calculateBalances = () => {
     // Initialize balances for each member
     const balances = {}
@@ -8,7 +26,7 @@ function SettlementSummary({ expenses, members }) {
       balances[member._id] = { name: member.name, balance: 0 }
     })
 
-    // Calculate balances
+    // Calculate balances, excluding paid expenses
     expenses.forEach(expense => {
       const sharePerPerson = expense.amount / expense.splitWith.length
       
@@ -20,13 +38,17 @@ function SettlementSummary({ expenses, members }) {
         balances[paidById].balance += expense.amount
       }
       
-      // Everyone who splits the expense gets debited
+      // Everyone who splits the expense gets debited (only if not paid)
       expense.splitWith.forEach(member => {
         if (!member) return
         // Handle both populated and non-populated
         const memberId = typeof member === 'object' ? member._id : member
         if (balances[memberId]) {
-          balances[memberId].balance -= sharePerPerson
+          // Only debit if this person hasn't paid their share
+          const isPaid = getPaymentStatus(expense, memberId)
+          if (!isPaid) {
+            balances[memberId].balance -= sharePerPerson
+          }
         }
       })
     })
@@ -60,7 +82,9 @@ function SettlementSummary({ expenses, members }) {
       if (settleAmount > 0.01) {
         settlements.push({
           from: debtors[i].name,
+          fromId: debtors[i].id,
           to: creditors[j].name,
+          toId: creditors[j].id,
           amount: settleAmount
         })
       }
@@ -73,6 +97,50 @@ function SettlementSummary({ expenses, members }) {
     }
 
     return { balances, settlements }
+  }
+
+  const handlePaymentClick = (settlement) => {
+    setPaymentModal(settlement)
+  }
+
+  const handleMarkAsPaid = async () => {
+    if (!paymentModal) return
+    
+    setProcessing(true)
+    try {
+      // Find all unpaid expenses where fromId owes toId
+      const unpaidExpenses = expenses.filter(expense => {
+        const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+        if (paidById !== paymentModal.toId) return false
+        
+        // Check if fromId is in splitWith and hasn't paid
+        return expense.splitWith.some(member => {
+          const memberId = typeof member === 'object' ? member._id : member
+          return memberId === paymentModal.fromId && !getPaymentStatus(expense, memberId)
+        })
+      })
+
+      // Mark all as paid
+      for (const expense of unpaidExpenses) {
+        await fetch(
+          `${API_URL}/expenses/${expense._id}/payment/${paymentModal.fromId}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paid: true })
+          }
+        )
+      }
+
+      if (onRefresh) await onRefresh()
+      alert(`Payment confirmed!\n${paymentModal.from} paid ${paymentModal.to} ₱${paymentModal.amount.toFixed(2)}`)
+      setPaymentModal(null)
+    } catch (error) {
+      console.error('Error marking payment:', error)
+      alert('Failed to mark payment. Please try again.')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const { balances, settlements } = calculateSettlements()
@@ -153,8 +221,18 @@ function SettlementSummary({ expenses, members }) {
                     <strong>{settlement.to}</strong>
                   </div>
                 </div>
-                <div className="settlement-amount-large">
-                  ₱{settlement.amount.toFixed(2)}
+                <div className="settlement-actions-group">
+                  <div className="settlement-amount-large">
+                    ₱{settlement.amount.toFixed(2)}
+                  </div>
+                  <button
+                    className="mark-paid-btn"
+                    onClick={() => handlePaymentClick(settlement)}
+                    title="Mark as paid"
+                  >
+                    <CheckCircle size={18} />
+                    Mark Paid
+                  </button>
                 </div>
               </div>
             ))}
@@ -192,6 +270,69 @@ function SettlementSummary({ expenses, members }) {
           ))}
         </div>
       </div>
+
+      {/* Payment Confirmation Modal */}
+      {paymentModal && (
+        <div className="modal-overlay" onClick={() => !processing && setPaymentModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Confirm Payment</h2>
+              <button
+                className="modal-close"
+                onClick={() => setPaymentModal(null)}
+                disabled={processing}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <p className="modal-question">Mark this payment as completed?</p>
+              
+              <div className="payment-details">
+                <div className="detail-row">
+                  <span>From:</span>
+                  <strong>{paymentModal.from}</strong>
+                </div>
+                <div className="detail-row">
+                  <span>To:</span>
+                  <strong>{paymentModal.to}</strong>
+                </div>
+                <div className="detail-row">
+                  <span>Amount:</span>
+                  <strong style={{ color: 'var(--color-primary)', fontSize: '1.25rem' }}>
+                    ₱{paymentModal.amount.toFixed(2)}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="modal-note">
+                <CheckCircle size={20} />
+                <p>This will mark all related expense shares as paid and move them to the Archive.</p>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => setPaymentModal(null)}
+                disabled={processing}
+              >
+                <X size={18} />
+                Cancel
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleMarkAsPaid}
+                disabled={processing}
+              >
+                <CheckCircle size={18} />
+                {processing ? 'Processing...' : 'Confirm Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
