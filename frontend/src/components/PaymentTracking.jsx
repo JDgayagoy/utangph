@@ -214,6 +214,134 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
               style={{ width: `${statistics.percentagePaid}%` }}
             />
           </div>
+          <div className="progress-stats">
+            <span>₱{statistics.totalPaidAmount.toFixed(2)} paid</span>
+            <span className="progress-percentage">{statistics.percentagePaid.toFixed(1)}%</span>
+            <span>₱{statistics.totalAmount.toFixed(2)} total</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Controls */}
+      <div className="card">
+        <div className="card-header">
+          <h2><Users size={28} /> Expense Payment Tracking</h2>
+        </div>
+        <div className="filter-controls">
+          <div className="filter-group">
+            <label>Filter by Status:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Expenses</option>
+              <option value="paid">Fully Paid</option>
+              <option value="partial">Partially Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Filter by Payer:</label>
+            <select
+              value={filterPayer}
+              onChange={(e) => setFilterPayer(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Payers</option>
+              {members.filter(m => m != null).map(member => (
+                <option key={member._id} value={member._id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Sort by:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="date">Date</option>
+              <option value="name">Name</option>
+              <option value="amount">Amount</option>
+              <option value="status">Payment Status</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Expense List */}
+        <div className="payment-tracking-list">
+          {filteredAndSortedExpenses.length === 0 ? (
+            <div className="empty-state">
+              <p>No expenses found</p>
+              <small>Try adjusting your filters</small>
+            </div>
+          ) : (
+            filteredAndSortedExpenses.map(expense => {
+              const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+              const paidByName = typeof expense.paidBy === 'object' ? expense.paidBy.name : members.find(m => m?._id === paidById)?.name || 'Unknown'
+              const sharePerPerson = expense.amount / (expense.splitWith?.length || 1)
+              const progress = getExpensePaymentProgress(expense)
+
+              return (
+                <div key={expense._id} className="payment-tracking-item">
+                  <div className="payment-item-header">
+                    <h3>{expense.description}</h3>
+                    <div className="payment-item-info">
+                      <span className="payment-total">₱{expense.amount.toFixed(2)}</span>
+                      <span className="payment-date">{new Date(expense.date).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="payment-progress-section">
+                    <div className="progress-bar-container">
+                      <div
+                        className="progress-bar-fill"
+                        style={{
+                          width: `${progress.percentage}%`,
+                          background: progress.percentage === 100 ? '#10b981' : progress.percentage > 0 ? '#f59e0b' : '#ef4444'
+                        }}
+                      />
+                    </div>
+                    <span className="progress-text">
+                      {progress.paidCount} of {progress.totalCount} paid
+                    </span>
+                  </div>
+                  <div className="payment-payer">
+                    <strong>Paid by:</strong> {paidByName}
+                  </div>
+                  <div className="payment-members-grid">
+                    {expense.splitWith?.filter(member => member != null).map(member => {
+                      const memberId = typeof member === 'object' ? member._id : member
+                      const memberName = typeof member === 'object' ? member.name : members.find(m => m?._id === memberId)?.name || 'Unknown'
+                      const isPaid = getPaymentStatus(expense, memberId)
+                      const isUpdating = updatingPayment === `${expense._id}-${memberId}`
+                      const isPayer = memberId === paidById
+
+                      return (
+                        <div key={memberId} className={`payment-member-item ${isPaid ? 'paid' : 'unpaid'} ${isPayer ? 'is-payer' : ''}`}>
+                          <label className="payment-checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={isPaid || isPayer}
+                              onChange={() => !isPayer && updatePaymentStatus(expense._id, memberId, isPaid)}
+                              disabled={isUpdating || isPayer}
+                            />
+                            <span className="payment-member-name">{memberName}</span>
+                            {isPayer && <span className="payer-badge">Payer</span>}
+                          </label>
+                          <span className="payment-member-amount">₱{sharePerPerson.toFixed(2)}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
     </div>

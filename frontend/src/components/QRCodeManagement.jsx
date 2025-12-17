@@ -221,7 +221,191 @@ function QRCodeManagement({ members = [], onRefresh }) {
           </div>
         ) : (
           <div className="qr-management-content">
-            {/* JSX for form and QR code grid is unchanged */}
+            {/* Add Form */}
+            {showAddForm && selectedMember && (
+              <div className="qr-form-card">
+                <div className="qr-form-header">
+                  <h3>Add QR Code for {members.find(m => m?._id === selectedMember)?.name}</h3>
+                  <button
+                    onClick={() => {
+                      setShowAddForm(false)
+                      setSelectedMember(null)
+                      setFormData({ label: '', imageFile: null, imagePreview: null })
+                    }}
+                    className="qr-close-btn"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <form onSubmit={handleAddQRCode} className="qr-form">
+                  <div className="form-group">
+                    <label htmlFor="qr-label">Label *</label>
+                    <input
+                      id="qr-label"
+                      type="text"
+                      placeholder="e.g., GCash, Maya, Bank Transfer"
+                      value={formData.label}
+                      onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="qr-image">QR Code Image *</label>
+                    <div className="file-input-wrapper">
+                      <input
+                        id="qr-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        required
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('qr-image')?.click()}
+                        className="file-select-btn"
+                      >
+                        <Upload size={20} />
+                        Choose Image
+                      </button>
+                      {formData.imagePreview && (
+                        <div className="image-preview">
+                          <img src={formData.imagePreview} alt="Preview" />
+                        </div>
+                      )}
+                    </div>
+                    <small>Maximum file size: 5MB. Supported formats: JPG, PNG, GIF</small>
+                  </div>
+                  <div className="form-actions">
+                    <button type="submit" className="btn-primary">
+                      <Check size={20} />
+                      Add QR Code
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* QR Codes Grid */}
+            <div className="qr-codes-grid">
+              {allQrCodes
+                .filter(qr => !filterMember || qr.memberId === filterMember)
+                .length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">
+                    <QrCode size={80} strokeWidth={1.5} opacity={0.4} />
+                  </div>
+                  <p>No QR codes yet</p>
+                  <small>Add QR codes for members to display payment options</small>
+                </div>
+              ) : (
+                allQrCodes
+                  .filter(qr => !filterMember || qr.memberId === filterMember)
+                  .map(qr => (
+                    <div key={qr._id} className="qr-code-card">
+                      {editingQr === qr._id ? (
+                        <div className="qr-edit-form">
+                          <div className="form-group">
+                            <label>Label</label>
+                            <input
+                              type="text"
+                              value={formData.label}
+                              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                              placeholder="QR Code Label"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Update Image (optional)</label>
+                            <div className="file-input-wrapper">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                id={`edit-file-${qr._id}`}
+                                style={{ display: 'none' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => document.getElementById(`edit-file-${qr._id}`)?.click()}
+                                className="file-select-btn"
+                              >
+                                <Upload size={16} />
+                                Choose New Image
+                              </button>
+                            </div>
+                            {formData.imagePreview && (
+                              <div className="image-preview-small">
+                                <img src={formData.imagePreview} alt="Preview" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="form-actions-inline">
+                            <button
+                              onClick={() => handleUpdateQRCode(qr)}
+                              className="btn-small btn-primary"
+                            >
+                              <Check size={16} />
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="btn-small btn-secondary"
+                            >
+                              <X size={16} />
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="qr-card-header">
+                            <div className="qr-card-title">
+                              <h3>{qr.label}</h3>
+                              <span className="qr-member-badge">{qr.memberName}</span>
+                            </div>
+                            <div className="qr-card-actions">
+                              <button
+                                onClick={() => startEditing(qr)}
+                                className="icon-btn"
+                                title="Edit"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQRCode(qr)}
+                                className="icon-btn delete"
+                                title="Delete"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </div>
+                          <div
+                            className="qr-card-image"
+                            onClick={() => setViewingQr(qr)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {qr.imageData ? (
+                              <img src={qr.imageData} alt={qr.label} />
+                            ) : (
+                              <div className="qr-placeholder">
+                                <Image size={48} opacity={0.3} />
+                                <span>No image</span>
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => setViewingQr(qr)}
+                            className="btn-view-qr"
+                          >
+                            View Full Size
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))
+              )}
+            </div>
           </div>
         )}
       </div>
