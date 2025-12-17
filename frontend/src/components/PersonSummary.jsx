@@ -16,7 +16,8 @@ function PersonSummary({ expenses, members, onPageChange, onRefresh }) {
   const getPaymentStatus = (expense, memberId) => {
     if (!expense.payments || expense.payments.length === 0) return false
     const payment = expense.payments.find(p => {
-      const pId = typeof p.memberId === 'object' ? p.memberId._id : p.memberId
+      if (!p || !p.memberId) return false
+      const pId = typeof p.memberId === 'object' && p.memberId !== null ? p.memberId._id : p.memberId
       return pId === memberId
     })
     return payment ? payment.paid : false

@@ -9,7 +9,8 @@ function ExpenseList({ expenses, members, onRefresh }) {
     }
     
     const payment = expense.payments.find(p => {
-      const paymentMemberId = typeof p.memberId === 'object' ? p.memberId._id : p.memberId
+      if (!p || !p.memberId) return false
+      const paymentMemberId = typeof p.memberId === 'object' && p.memberId !== null ? p.memberId._id : p.memberId
       return paymentMemberId === memberId
     })
     
@@ -21,12 +22,13 @@ function ExpenseList({ expenses, members, onRefresh }) {
     const balances = {}
     
     // Initialize balances
-    members.forEach(member => {
+    members.filter(member => member != null).forEach(member => {
       balances[member._id] = { name: member.name, balance: 0 }
     })
 
     // Calculate balances from expenses, considering payments
     expenses.forEach(expense => {
+      if (!expense.splitWith || expense.splitWith.length === 0) return
       const sharePerPerson = expense.amount / expense.splitWith.length
       const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
       
@@ -47,15 +49,16 @@ function ExpenseList({ expenses, members, onRefresh }) {
 
     // Create matrix showing who owes whom
     const matrix = {}
-    members.forEach(fromMember => {
+    members.filter(member => member != null).forEach(fromMember => {
       matrix[fromMember._id] = {}
-      members.forEach(toMember => {
+      members.filter(member => member != null).forEach(toMember => {
         matrix[fromMember._id][toMember._id] = 0
       })
     })
 
     // Calculate who owes whom from expenses, EXCLUDING paid amounts
     expenses.forEach(expense => {
+      if (!expense.splitWith || expense.splitWith.length === 0) return
       const sharePerPerson = expense.amount / expense.splitWith.length
       const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
       

@@ -39,6 +39,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
     }
   }
 
+  // ✅ FIXED: merge conflict resolved
   const getPaymentStatus = (expense, memberId) => {
     if (!expense?.payments?.length) return false
 
@@ -170,7 +171,11 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
           <div className="stat-content">
             <h3>Fully Paid</h3>
             <p className="stat-value">{statistics.fullyPaid}</p>
-            <span className="stat-label">{statistics.totalExpenses > 0 ? ((statistics.fullyPaid / statistics.totalExpenses) * 100).toFixed(0) : 0}% complete</span>
+            <span className="stat-label">
+              {statistics.totalExpenses > 0
+                ? ((statistics.fullyPaid / statistics.totalExpenses) * 100).toFixed(0)
+                : 0}% complete
+            </span>
           </div>
         </div>
 
@@ -200,149 +205,15 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
       {/* Overall Progress */}
       <div className="card">
         <div className="card-header">
-          <h2><DollarSign size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Overall Payment Progress</h2>
+          <h2><DollarSign size={28} /> Overall Payment Progress</h2>
         </div>
         <div className="overall-progress">
-          <div className="progress-stats">
-            <div className="progress-stat">
-              <span className="progress-label">Paid Amount</span>
-              <span className="progress-amount paid">₱{statistics.totalPaidAmount.toFixed(2)}</span>
-            </div>
-            <div className="progress-stat">
-              <span className="progress-label">Remaining</span>
-              <span className="progress-amount remaining">₱{(statistics.totalAmount - statistics.totalPaidAmount).toFixed(2)}</span>
-            </div>
-            <div className="progress-stat">
-              <span className="progress-label">Completion</span>
-              <span className="progress-amount completion">{statistics.percentagePaid.toFixed(1)}%</span>
-            </div>
-          </div>
           <div className="progress-bar-large">
-            <div className="progress-bar-fill-large" style={{ width: `${statistics.percentagePaid}%` }}></div>
+            <div
+              className="progress-bar-fill-large"
+              style={{ width: `${statistics.percentagePaid}%` }}
+            />
           </div>
-        </div>
-      </div>
-
-      {/* Filters and Sorting */}
-      <div className="card">
-        <div className="card-header">
-          <h2><Check size={28} style={{ display: 'inline-block', marginRight: '8px' }} /> Payment Tracking</h2>
-          <div className="controls-group">
-            <div className="filter-row">
-              <div className="filter-group">
-                <label><Users size={16} /> Paid By:</label>
-                <select value={filterPayer} onChange={(e) => setFilterPayer(e.target.value)} className="filter-select">
-                  <option value="all">All Payers</option>
-                  {members.map(member => (
-                    <option key={member._id} value={member._id}>{member.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="toggle-filters">
-              <button 
-                className={`toggle-btn ${filterStatus === 'all' ? 'active' : ''}`}
-                onClick={() => setFilterStatus('all')}
-              >
-                All ({expenses.length})
-              </button>
-              <button 
-                className={`toggle-btn ${filterStatus === 'paid' ? 'active' : ''}`}
-                onClick={() => setFilterStatus('paid')}
-              >
-                Paid ({statistics.fullyPaid})
-              </button>
-              <button 
-                className={`toggle-btn ${filterStatus === 'partial' ? 'active' : ''}`}
-                onClick={() => setFilterStatus('partial')}
-              >
-                Partial ({statistics.partiallyPaid})
-              </button>
-              <button 
-                className={`toggle-btn ${filterStatus === 'unpaid' ? 'active' : ''}`}
-                onClick={() => setFilterStatus('unpaid')}
-              >
-                Unpaid ({statistics.unpaid})
-              </button>
-            </div>
-            <div className="sort-controls">
-              <label><ArrowUpDown size={16} /> Sort:</label>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
-                <option value="date">Date (Newest)</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="amount">Amount (High-Low)</option>
-                <option value="status">Payment Status</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="payment-tracking-list">
-          {filteredAndSortedExpenses.length === 0 ? (
-            <div className="empty-state">
-              <Check size={64} style={{ opacity: 0.2 }} />
-              <p>No expenses found</p>
-              <small>Try adjusting your filters</small>
-            </div>
-          ) : (
-            filteredAndSortedExpenses.map(expense => {
-              const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
-              const paidByName = typeof expense.paidBy === 'object' ? expense.paidBy.name : members.find(m => m._id === paidById)?.name || 'Unknown'
-              const sharePerPerson = expense.amount / expense.splitWith.length
-              const progress = getExpensePaymentProgress(expense)
-
-              return (
-                <div key={expense._id} className="payment-tracking-item">
-                  <div className="payment-item-header">
-                    <h3>{expense.description}</h3>
-                    <div className="payment-item-info">
-                      <span className="payment-total">₱{expense.amount.toFixed(2)}</span>
-                      <span className="payment-date">{new Date(expense.date).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <div className="payment-progress-bar">
-                    <div className="progress-bar-bg">
-                      <div 
-                        className="progress-bar-fill" 
-                        style={{ width: `${progress.percentage}%` }}
-                      ></div>
-                    </div>
-                    <span className="progress-text">
-                      {progress.paidCount} of {progress.totalCount} paid
-                    </span>
-                  </div>
-                  <div className="payment-payer">
-                    <strong>Paid by:</strong> {paidByName}
-                  </div>
-                  <div className="payment-members-grid">
-                    {expense.splitWith.filter(member => member != null).map(member => {
-                      const memberId = typeof member === 'object' ? member._id : member
-                      const memberName = typeof member === 'object' ? member.name : members.find(m => m._id === memberId)?.name || 'Unknown'
-                      const isPaid = getPaymentStatus(expense, memberId)
-                      const isUpdating = updatingPayment === `${expense._id}-${memberId}`
-                      const isPayer = memberId === paidById
-
-                      return (
-                        <div key={memberId} className={`payment-member-item ${isPaid ? 'paid' : 'unpaid'} ${isPayer ? 'is-payer' : ''}`}>
-                          <label className="payment-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={isPaid || isPayer}
-                              onChange={() => !isPayer && updatePaymentStatus(expense._id, memberId, isPaid)}
-                              disabled={isUpdating || isPayer}
-                            />
-                            <span className="payment-member-name">{memberName}</span>
-                            {isPayer && <span className="payer-badge">Payer</span>}
-                          </label>
-                          <span className="payment-member-amount">₱{sharePerPerson.toFixed(2)}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })
-          )}
         </div>
       </div>
     </div>
