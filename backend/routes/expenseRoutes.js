@@ -3,10 +3,12 @@ import Expense from '../models/Expense.js'
 
 const router = express.Router()
 
-// Get all expenses
+// Get all expenses (filtered by groupId)
 router.get('/', async (req, res) => {
   try {
-    const expenses = await Expense.find()
+    const { groupId } = req.query
+    const filter = groupId ? { groupId } : {}
+    const expenses = await Expense.find(filter)
       .populate('paidBy', 'name')
       .populate('splitWith', 'name')
       .populate('payments.memberId', 'name')
@@ -38,6 +40,7 @@ router.post('/', async (req, res) => {
   const expense = new Expense({
     description: req.body.description,
     amount: req.body.amount,
+    groupId: req.body.groupId,
     paidBy: req.body.paidBy,
     splitWith: req.body.splitWith,
     date: req.body.date || Date.now()
@@ -93,10 +96,12 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
-// Get settlement summary
+// Get settlement summary (filtered by groupId)
 router.get('/settlements/summary', async (req, res) => {
   try {
-    const expenses = await Expense.find()
+    const { groupId } = req.query
+    const filter = groupId ? { groupId } : {}
+    const expenses = await Expense.find(filter)
       .populate('paidBy', 'name')
       .populate('splitWith', 'name')
     

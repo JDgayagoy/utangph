@@ -19,10 +19,12 @@ const upload = multer({
   }
 })
 
-// Get all members
+// Get all members (filtered by groupId)
 router.get('/', async (req, res) => {
   try {
-    const members = await Member.find().sort({ name: 1 })
+    const { groupId } = req.query
+    const filter = groupId ? { groupId } : {}
+    const members = await Member.find(filter).sort({ name: 1 })
     res.json(members)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -50,8 +52,9 @@ router.get('/:id/balance', async (req, res) => {
       return res.status(404).json({ message: 'Member not found' })
     }
 
-    // Get all expenses involving this member
+    // Get all expenses involving this member within the same group
     const expenses = await Expense.find({
+      groupId: member.groupId,
       $or: [
         { paidBy: req.params.id },
         { splitWith: req.params.id }
@@ -95,7 +98,8 @@ router.get('/:id/balance', async (req, res) => {
 // Create new member
 router.post('/', async (req, res) => {
   const member = new Member({
-    name: req.body.name
+    name: req.body.name,
+    groupId: req.body.groupId
   })
 
   try {

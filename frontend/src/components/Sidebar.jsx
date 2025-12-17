@@ -1,5 +1,6 @@
-import { Users, Plus, ClipboardList, TrendingUp, Home, Archive, CheckSquare, QrCode } from 'lucide-react'
-function Sidebar({ currentPage, onPageChange }) {
+import { Users, Plus, ClipboardList, TrendingUp, Home, Archive, CheckSquare, QrCode, LogOut } from 'lucide-react'
+
+function Sidebar({ currentPage, onPageChange, currentGroup, onLogout }) {
   const pages = [
     { id: 'settlement', icon: TrendingUp, label: 'Summary' },
     { id: 'payments', icon: CheckSquare, label: 'Payment Tracking' },
@@ -9,11 +10,17 @@ function Sidebar({ currentPage, onPageChange }) {
     { id: 'members', icon: Users, label: 'Members' },
     { id: 'qrcodes', icon: QrCode, label: 'QR Codes' }
   ]
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
         <h1><Home size={32} style={{ display: 'inline-block', marginRight: '8px' }} /> UtangPH</h1>
         <p>Shared Expense Tracker</p>
+        {currentGroup && (
+          <div className="current-group-info">
+            <div className="group-badge">{currentGroup.name}</div>
+          </div>
+        )}
       </div>
       <nav className="sidebar-nav">
         {pages.map(page => {
@@ -30,9 +37,18 @@ function Sidebar({ currentPage, onPageChange }) {
           )
         })}
       </nav>
+      {onLogout && (
+        <div className="sidebar-footer">
+          <button className="logout-button" onClick={onLogout}>
+            <LogOut size={20} />
+            <span>Switch Group</span>
+          </button>
+        </div>
+      )}
     </aside>
-  )     
-}       
+  )
+}
+
 export default Sidebar
 
 

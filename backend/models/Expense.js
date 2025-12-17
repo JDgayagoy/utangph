@@ -11,6 +11,11 @@ const expenseSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    required: true
+  },
   paidBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Member',

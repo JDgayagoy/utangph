@@ -334,18 +334,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
                             className={`matrix-cell ${amount > 0 ? 'has-debt' : ''}`}
                             data-label={toMember.name}
                           >
-                            {amount > 0 ? (
-                              <div className="cell-content">
-                                <span>₱{amount.toFixed(0)}</span>
-                                <button
-                                  className="pay-btn-small"
-                                  onClick={() => handlePayClick(fromMember._id, toMember._id, amount, fromMember.name, toMember.name)}
-                                  title="Mark as paid"
-                                >
-                                  <CheckCircle size={14} />
-                                </button>
-                              </div>
-                            ) : '0'}
+                            {amount > 0 ? `₱${amount.toFixed(0)}` : '0'}
                           </td>
                         )
                       })}

@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import connectDB from './config/db.js'
+import groupRoutes from './routes/groupRoutes.js'
 import memberRoutes from './routes/memberRoutes.js'
 import expenseRoutes from './routes/expenseRoutes.js'
 
@@ -28,6 +29,7 @@ app.get('/favicon.ico', (req, res) => res.status(204).end())
 connectDB()
 
 // Routes
+app.use('/api/groups', groupRoutes)
 app.use('/api/members', memberRoutes)
 app.use('/api/expenses', expenseRoutes)
 
