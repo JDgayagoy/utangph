@@ -23,31 +23,43 @@ function SettlementSummary({ expenses, members, onRefresh }) {
     // Initialize balances for each member
     const balances = {}
     members.filter(member => member != null).forEach(member => {
-      balances[member._id] = { name: member.name, balance: 0 }
+      balances[member._id] = { name: member.name, balance: 0, owes: 0, shouldReceive: 0 }
     })
 
     // Calculate balances, excluding paid expenses
     expenses.forEach(expense => {
-      const sharePerPerson = expense.amount / expense.splitWith.length
+      if (!expense.splitWith || expense.splitWith.length === 0) return
       
-      // Get paidBy ID (handle both populated and non-populated)
+      const sharePerPerson = expense.amount / expense.splitWith.length
       const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
       
-      // The person who paid gets credited
-      if (balances[paidById]) {
-        balances[paidById].balance += expense.amount
-      }
-      
-      // Everyone who splits the expense gets debited (only if not paid)
+      // Process each person in the split
       expense.splitWith.forEach(member => {
         if (!member) return
-        // Handle both populated and non-populated
         const memberId = typeof member === 'object' ? member._id : member
-        if (balances[memberId]) {
-          // Only debit if this person hasn't paid their share
+        
+        if (!balances[memberId]) return
+        
+        // Check if this person has paid their share
+        const isPaid = getPaymentStatus(expense, memberId)
+        
+        if (!isPaid && memberId !== paidById) {
+          // This person owes money to the payer
+          balances[memberId].balance -= sharePerPerson
+          balances[memberId].owes += sharePerPerson
+        }
+      })
+      
+      // Credit the payer for amounts still owed to them
+      expense.splitWith.forEach(member => {
+        if (!member) return
+        const memberId = typeof member === 'object' ? member._id : member
+        
+        if (memberId !== paidById) {
           const isPaid = getPaymentStatus(expense, memberId)
-          if (!isPaid) {
-            balances[memberId].balance -= sharePerPerson
+          if (!isPaid && balances[paidById]) {
+            balances[paidById].balance += sharePerPerson
+            balances[paidById].shouldReceive += sharePerPerson
           }
         }
       })
@@ -96,7 +108,36 @@ function SettlementSummary({ expenses, members, onRefresh }) {
       if (creditors[j].amount < 0.01) j++
     }
 
-    return { balances, settlements }
+    // Recalculate balances based on simplified settlements for display
+    const simplifiedBalances = {}
+    members.filter(member => member != null).forEach(member => {
+      simplifiedBalances[member._id] = { 
+        name: member.name, 
+        balance: 0, 
+        totalOwes: 0, 
+        totalReceives: 0 
+      }
+    })
+
+    // Sum up all transactions from simplified settlements
+    settlements.forEach(settlement => {
+      // Person paying money (fromId)
+      if (simplifiedBalances[settlement.fromId]) {
+        simplifiedBalances[settlement.fromId].totalOwes += settlement.amount
+      }
+      // Person receiving money (toId)
+      if (simplifiedBalances[settlement.toId]) {
+        simplifiedBalances[settlement.toId].totalReceives += settlement.amount
+      }
+    })
+
+    // Calculate net balance for each person
+    Object.keys(simplifiedBalances).forEach(id => {
+      simplifiedBalances[id].balance = 
+        simplifiedBalances[id].totalReceives - simplifiedBalances[id].totalOwes
+    })
+
+    return { balances: simplifiedBalances, settlements }
   }
 
   const handlePaymentClick = (settlement) => {
@@ -145,10 +186,13 @@ function SettlementSummary({ expenses, members, onRefresh }) {
 
   const { balances, settlements } = calculateSettlements()
   
-  // Calculate statistics
+  // Calculate statistics based on simplified settlements
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0)
-  const totalDebt = Object.values(balances).reduce((sum, data) => sum + (data.balance < 0 ? -data.balance : 0), 0)
-  const totalCredit = Object.values(balances).reduce((sum, data) => sum + (data.balance > 0 ? data.balance : 0), 0)
+  const totalDebt = Object.values(balances).reduce((sum, data) => sum + data.totalOwes, 0)
+  const totalCredit = Object.values(balances).reduce((sum, data) => sum + data.totalReceives, 0)
+  
+  // Verify that debts and credits match (they should be equal in simplified settlements)
+  const balanceCheck = Math.abs(totalDebt - totalCredit) < 0.01
 
   return (
     <div>
@@ -246,29 +290,46 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         <div className="balances-list">
           {Object.entries(balances)
             .sort(([, a], [, b]) => b.balance - a.balance)
-            .map(([id, data]) => (
-            <div key={id} className="balance-item">
-              <div className="balance-info">
-                <strong className="member-name">{data.name}</strong>
-                <span className="balance-status" style={{ 
-                  color: data.balance >= 0 ? '#10b981' : '#ef4444' 
-                }}>
-                  {data.balance >= 0 ? (
-                    <><ArrowUp size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} /> Should receive</>
-                  ) : (
-                    <><ArrowDown size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} /> Owes</>
-                  )}
-                </span>
-              </div>
-              <div className="balance-amount" style={{ 
-                color: data.balance >= 0 ? '#10b981' : '#ef4444',
-                fontWeight: 800
-              }}>
-                {data.balance >= 0 ? '+' : ''}₱{data.balance.toFixed(2)}
-              </div>
-            </div>
-          ))}
+            .map(([id, data]) => {
+              const netBalance = data.balance
+              const absBalance = Math.abs(netBalance)
+              
+              // Skip members with zero balance
+              if (absBalance < 0.01) return null
+              
+              return (
+                <div key={id} className="balance-item">
+                  <div className="balance-info">
+                    <strong className="member-name">{data.name}</strong>
+                    <span className="balance-status" style={{ 
+                      color: netBalance >= 0 ? '#10b981' : '#ef4444' 
+                    }}>
+                      {netBalance >= 0 ? (
+                        <><ArrowUp size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} /> Should receive</>
+                      ) : (
+                        <><ArrowDown size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} /> Owes</>
+                      )}
+                    </span>
+                  </div>
+                  <div className="balance-amount" style={{ 
+                    color: netBalance >= 0 ? '#10b981' : '#ef4444',
+                    fontWeight: 800
+                  }}>
+                    ₱{absBalance.toFixed(2)}
+                  </div>
+                </div>
+              )
+            }).filter(Boolean)}
         </div>
+        
+        {/* Balance Verification */}
+        {Object.values(balances).every(data => Math.abs(data.balance) < 0.01) && (
+          <div className="empty-state" style={{ padding: '2rem' }}>
+            <CheckCircle size={48} strokeWidth={1.5} opacity={0.4} style={{ color: '#10b981' }} />
+            <p style={{ marginTop: '1rem', color: '#10b981', fontWeight: 600 }}>All balanced! ✨</p>
+            <small style={{ color: '#6b7280' }}>Everyone has settled their expenses</small>
+          </div>
+        )}
       </div>
 
       {/* Payment Confirmation Modal */}

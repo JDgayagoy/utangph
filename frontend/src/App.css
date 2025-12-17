@@ -310,12 +310,14 @@
 .item-count {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: white;
-  padding: var(--space-2) var(--space-5);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
   letter-spacing: 0.025em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 /* ========================================
    PAGE LAYOUTS
@@ -1496,6 +1498,7 @@ button.secondary:active {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  margin-top: var(--space-5);
 }
 
 .payment-tracking-item {
@@ -1996,6 +1999,27 @@ button.secondary:active {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.filter-group.clickable {
+  background: var(--color-gray-50);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.filter-group.clickable:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-200);
+}
+
+.filter-group.clickable:focus-within {
+  border-color: var(--color-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .filter-group label {
@@ -2006,36 +2030,100 @@ button.secondary:active {
   align-items: center;
   gap: var(--space-1);
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .filter-select {
   padding: var(--space-2) var(--space-3);
-  border: 2px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
+  border: none;
+  border-radius: var(--radius);
   background: white;
   color: var(--color-gray-900);
   font-weight: 600;
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: all var(--transition-base);
-  min-width: 160px;
-}
-
-.filter-select:hover {
-  border-color: var(--color-primary);
+  min-width: 120px;
 }
 
 .filter-select:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .header-controls {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items: center;
   flex-wrap: wrap;
+}
+
+.search-bar-container {
+  padding: 0 var(--space-6) var(--space-6) var(--space-6);
+}
+
+.search-box-full {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: white;
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  gap: var(--space-3);
+  transition: all var(--transition-base);
+}
+
+.search-box-full:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-box-full svg {
+  color: var(--color-gray-400);
+  flex-shrink: 0;
+}
+
+.search-box-full:focus-within svg {
+  color: var(--color-primary);
+}
+
+.search-input-full {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: var(--font-size-base);
+  color: var(--color-gray-900);
+  background: transparent;
+}
+
+.search-input-full::placeholder {
+  color: var(--color-gray-400);
+}
+
+.search-clear-btn {
+  background: var(--color-gray-100);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-gray-600);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.search-clear-btn:hover {
+  background: var(--color-gray-200);
+  color: var(--color-gray-900);
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .toggle-filters {
