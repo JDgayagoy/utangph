@@ -495,7 +495,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
 
             <div className="modal-actions" style={{ flexDirection: 'column', gap: '0.75rem' }}>
               <button
-                className="btn-primary"
+                className="btn-secondary"
                 onClick={() => {
                   const transactions = getTransactionsBetween(selectionModal.fromId, selectionModal.toId)
                   setTransactionsModal({
@@ -504,7 +504,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
                   })
                   setSelectionModal(null)
                 }}
-                style={{ width: '100%' }}
+                style={{ width: '100%', background: '#667eea', color: 'white', border: 'none' }}
               >
                 <List size={18} />
                 View Transactions
