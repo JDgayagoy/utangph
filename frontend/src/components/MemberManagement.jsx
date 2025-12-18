@@ -488,7 +488,6 @@ function MemberManagement({ members, onAddMember, onRefresh, expenses = [] }) {
               </div>
             )
           })()}
-          )}
         </div>
       </div>
 

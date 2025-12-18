@@ -175,7 +175,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#10b981' }}>
+          <div className="stat-icon">
             <CheckCircle size={28} />
           </div>
           <div className="stat-content">
@@ -190,7 +190,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#f59e0b' }}>
+          <div className="stat-icon">
             <TrendingUp size={28} />
           </div>
           <div className="stat-content">
@@ -201,7 +201,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#ef4444' }}>
+          <div className="stat-icon">
             <XCircle size={28} />
           </div>
           <div className="stat-content">

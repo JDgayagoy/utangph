@@ -209,7 +209,7 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#ef4444' }}>
+          <div className="stat-icon">
             <ArrowDown size={24} />
           </div>
           <div className="stat-content">
@@ -219,7 +219,7 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#10b981' }}>
+          <div className="stat-icon">
             <ArrowUp size={24} />
           </div>
           <div className="stat-content">
@@ -229,7 +229,7 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#3282B8' }}>
+          <div className="stat-icon">
             <Users size={24} />
           </div>
           <div className="stat-content">

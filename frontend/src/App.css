@@ -457,16 +457,15 @@
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10px);
+  background: var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
   font-weight: 800;
-  color: white;
+  color: var(--color-primary);
   flex-shrink: 0;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid var(--color-tertiary);
   position: relative;
   z-index: 1;
 }
@@ -1425,8 +1424,8 @@ button.secondary:active {
 .net-amount {
   display: inline-block;
   padding: var(--space-2) var(--space-4);
-  background: #f59e0b;
-  color: var(--color-gray-900);
+  background: var(--color-accent);
+  color: var(--color-primary);
   font-weight: 900;
   font-size: var(--font-size-lg);
   border-radius: var(--radius-full);
@@ -1509,8 +1508,8 @@ button.secondary:active {
 .settlement-amount {
   font-size: var(--font-size-xl);
   font-weight: 900;
-  color: var(--color-gray-900);
-  background: #f59e0b;
+  color: var(--color-primary);
+  background: var(--color-accent);
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-full);
   text-align: center;
@@ -1653,13 +1652,13 @@ button.secondary:active {
 }
 
 .matrix-table .net-balance-cell.positive {
-  background: #10b981;
+  background: var(--color-tertiary);
   color: white;
 }
 
 .matrix-table .net-balance-cell.negative {
-  background: #f59e0b;
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-primary);
 }
 
 .matrix-table .net-balance-header {
@@ -1743,7 +1742,7 @@ button.secondary:active {
 
 .progress-bar-fill {
   height: 100%;
-  background: #10b981;
+  background: var(--color-primary);
   border-radius: var(--radius-full);
   transition: width 0.3s ease;
 }
@@ -1933,6 +1932,7 @@ button.secondary:active {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--color-primary);
   color: white;
   flex-shrink: 0;
 }
@@ -2018,7 +2018,7 @@ button.secondary:active {
 }
 
 .distribution-bar.negative {
-  background: #f59e0b;
+  background: var(--color-accent);
 }
 
 .distribution-value {
@@ -2134,7 +2134,7 @@ button.secondary:active {
 }
 
 .progress-amount.remaining {
-  color: #f59e0b;
+  color: var(--color-accent);
 }
 
 .progress-amount.completion {
@@ -2150,7 +2150,7 @@ button.secondary:active {
 
 .progress-bar-fill-large {
   height: 100%;
-  background: #10b981;
+  background: var(--color-primary);
   border-radius: var(--radius-full);
   transition: width 0.5s ease;
   display: flex;
@@ -3060,11 +3060,11 @@ button.secondary:active {
 }
 
 .balance-amount.positive {
-  color: #059669;
+  color: var(--color-tertiary);
 }
 
 .balance-amount.negative {
-  color: #dc2626;
+  color: var(--color-accent);
 }
 
 /* Right Panel - Member Details */
@@ -3146,13 +3146,13 @@ button.secondary:active {
 }
 
 .summary-icon.positive {
-  background: #10b981;
+  background: var(--color-tertiary);
   color: white;
 }
 
 .summary-icon.negative {
-  background: #3282B8;
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-primary);
 }
 
 .summary-content {
@@ -3176,11 +3176,11 @@ button.secondary:active {
 }
 
 .summary-content .amount.positive {
-  color: #059669;
+  color: var(--color-tertiary);
 }
 
 .summary-content .amount.negative {
-  color: #dc2626;
+  color: var(--color-accent);
 }
 
 .summary-content small {
@@ -3207,12 +3207,14 @@ button.secondary:active {
 }
 
 .debt-item.owes {
-  background: #3282B8, white);
+  background: var(--color-tertiary);
+  color: white;
   border-left: 4px solid #dc2626;
 }
 
 .debt-item.owed {
-  background: #3282B8, white);
+  background: var(--color-tertiary);
+  color: white;
   border-left: 4px solid #059669;
 }
 
@@ -3588,12 +3590,14 @@ button.secondary:active {
 }
 
 .expense-detail-item.paid-by-me {
-  background: #3282B8, white);
+  background: var(--color-tertiary);
+  color: white;
   border-left: 4px solid #059669;
 }
 
 .expense-detail-item.paid-by-other {
-  background: #3282B8, white);
+  background: var(--color-tertiary);
+  color: white;
   border-left: 4px solid #dc2626;
 }
 

@@ -235,7 +235,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
       {/* Statistics Cards at Top */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#3282B8' }}>
+          <div className="stat-icon">
             <TrendingUp size={24} />
           </div>
           <div className="stat-content">
@@ -246,7 +246,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#10b981' }}>
+          <div className="stat-icon">
             <CreditCard size={24} />
           </div>
           <div className="stat-content">
@@ -257,7 +257,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#f59e0b' }}>
+          <div className="stat-icon">
             <ArrowRightLeft size={24} />
           </div>
           <div className="stat-content">
@@ -268,7 +268,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#BBE1FA' }}>
+          <div className="stat-icon">
             <BarChart3 size={24} />
           </div>
           <div className="stat-content">
