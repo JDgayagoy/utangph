@@ -1,4 +1,4 @@
-import { Users, Plus, ClipboardList, TrendingUp, Home, Archive, CheckSquare, QrCode, LogOut } from 'lucide-react'
+import { Users, Plus, ClipboardList, TrendingUp, Home, Archive, CheckSquare, LogOut } from 'lucide-react'
 
 function Sidebar({ currentPage, onPageChange, currentGroup, onLogout }) {
   const pages = [
@@ -7,8 +7,7 @@ function Sidebar({ currentPage, onPageChange, currentGroup, onLogout }) {
     { id: 'items', icon: ClipboardList, label: 'All Items' },
     { id: 'add', icon: Plus, label: 'Add Items' },
     { id: 'archive', icon: Archive, label: 'Archive' },
-    { id: 'members', icon: Users, label: 'Members' },
-    { id: 'qrcodes', icon: QrCode, label: 'QR Codes' }
+    { id: 'members', icon: Users, label: 'Members' }
   ]
 
   return (

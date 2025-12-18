@@ -7,9 +7,9 @@ import ItemsList from './components/ItemsList'
 import MemberManagement from './components/MemberManagement'
 import Archive from './components/Archive'
 import PaymentTracking from './components/PaymentTracking'
-import QRCodeManagement from './components/QRCodeManagement'
 import Sidebar from './components/Sidebar'
-import { Users, Plus, ClipboardList, TrendingUp, Archive as ArchiveIcon, CheckSquare, QrCode } from 'lucide-react'
+import BottomNav from './components/BottomNav'
+import { Users, Plus, ClipboardList, TrendingUp, Archive as ArchiveIcon, CheckSquare } from 'lucide-react'
 
 function App() {
   const [currentGroup, setCurrentGroup] = useState(null)
@@ -132,7 +132,6 @@ function App() {
             {currentPage === 'settlement' && <><TrendingUp size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> Summary</>}
             {currentPage === 'archive' && <><ArchiveIcon size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> Archive</>}
             {currentPage === 'payments' && <><CheckSquare size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> Payment Tracking</>}
-            {currentPage === 'qrcodes' && <><QrCode size={32} style={{ display: 'inline-block', marginRight: '12px', verticalAlign: 'middle' }} /> QR Codes</>}
           </h1>
         </header>
 
@@ -141,7 +140,8 @@ function App() {
             <MemberManagement 
               members={members} 
               onAddMember={addMember} 
-              onRefresh={fetchMembers} 
+              onRefresh={fetchMembers}
+              expenses={expenses}
             />
           )}
           
@@ -182,14 +182,13 @@ function App() {
               onRefresh={fetchExpenses}
             />
           )}
-          
-          {currentPage === 'qrcodes' && (
-            <QRCodeManagement 
-              members={members}
-              onRefresh={fetchMembers}
-            />
-          )}
         </main>
+
+        <BottomNav 
+          currentPage={currentPage} 
+          onPageChange={setCurrentPage}
+          onLogout={handleLogout}
+        />
       </div>
     </div>
   )

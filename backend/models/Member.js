@@ -25,6 +25,10 @@ const memberSchema = new mongoose.Schema({
     ref: 'Group',
     required: true
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   qrCodes: [qrCodeSchema]
 }, {
   timestamps: true

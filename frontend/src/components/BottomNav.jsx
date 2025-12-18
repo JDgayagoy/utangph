@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { LogOut } from 'lucide-react'
 
-function BottomNav({ currentPage, onPageChange }) {
+function BottomNav({ currentPage, onPageChange, onLogout }) {
   const pages = [
     { id: 'members', icon: '👥', label: 'Members' },
     { id: 'add', icon: '➕', label: 'Add Items' },
@@ -20,6 +21,15 @@ function BottomNav({ currentPage, onPageChange }) {
           <span className="nav-label">{page.label}</span>
         </button>
       ))}
+      {onLogout && (
+        <button
+          className="nav-item logout-nav"
+          onClick={onLogout}
+        >
+          <span className="nav-icon"><LogOut size={20} /></span>
+          <span className="nav-label">Switch</span>
+        </button>
+      )}
     </nav>
   )
 }

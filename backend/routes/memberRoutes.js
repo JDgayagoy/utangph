@@ -127,6 +127,25 @@ router.put('/:id', async (req, res) => {
   }
 })
 
+// Toggle member active status
+router.patch('/:id', async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+
+    if (req.body.hasOwnProperty('isActive')) {
+      member.isActive = req.body.isActive
+    }
+
+    const updatedMember = await member.save()
+    res.json(updatedMember)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
 // Delete member
 router.delete('/:id', async (req, res) => {
   try {
