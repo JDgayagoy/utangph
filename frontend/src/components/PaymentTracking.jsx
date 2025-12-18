@@ -16,6 +16,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
   const [sortBy, setSortBy] = useState('date')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterPayer, setFilterPayer] = useState('all')
+  const [filterSplitWith, setFilterSplitWith] = useState('all')
 
   const updatePaymentStatus = async (expenseId, memberId, currentStatus) => {
     setUpdatingPayment(`${expenseId}-${memberId}`)
@@ -82,6 +83,15 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
       )
     }
 
+    if (filterSplitWith !== 'all') {
+      filtered = filtered.filter(exp => 
+        exp.splitWith?.some(member => {
+          const memberId = member?._id ?? member
+          return memberId === filterSplitWith
+        })
+      )
+    }
+
     if (filterStatus !== 'all') {
       filtered = filtered.filter(exp => {
         const pct = getExpensePaymentProgress(exp).percentage
@@ -110,7 +120,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
       default:
         return filtered
     }
-  }, [expenses, sortBy, filterStatus, filterPayer])
+  }, [expenses, sortBy, filterStatus, filterPayer, filterSplitWith])
 
   const statistics = useMemo(() => {
     let fullyPaid = 0
@@ -250,6 +260,22 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
               className="filter-select"
             >
               <option value="all">All Payers</option>
+              {members.filter(m => m != null).map(member => (
+                <option key={member._id} value={member._id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Filter by Split With:</label>
+            <select
+              value={filterSplitWith}
+              onChange={(e) => setFilterSplitWith(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Members</option>
               {members.filter(m => m != null).map(member => (
                 <option key={member._id} value={member._id}>
                   {member.name}
