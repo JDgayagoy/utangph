@@ -35,14 +35,16 @@
   --space-16: 4rem;
   
   /* Color Palette */
-  --color-primary: #667eea;
-  --color-primary-dark: #5568d3;
-  --color-primary-light: #8b9cee;
-  --color-secondary: #764ba2;
+  --color-primary: #0F4C75;
+  --color-primary-dark: #0a3654;
+  --color-primary-light: #3282B8;
+  --color-secondary: #1B262C;
+  --color-tertiary: #3282B8;
+  --color-accent: #BBE1FA;
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
-  --color-info: #3b82f6;
+  --color-info: #3282B8;
   
   /* Neutral Colors */
   --color-gray-50: #f8fafc;

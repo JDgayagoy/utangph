@@ -209,7 +209,7 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}>
+          <div className="stat-icon" style={{ background: '#ef4444' }}>
             <ArrowDown size={24} />
           </div>
           <div className="stat-content">
@@ -219,7 +219,7 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+          <div className="stat-icon" style={{ background: '#10b981' }}>
             <ArrowUp size={24} />
           </div>
           <div className="stat-content">
@@ -229,7 +229,7 @@ function SettlementSummary({ expenses, members, onRefresh }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
+          <div className="stat-icon" style={{ background: '#3282B8' }}>
             <Users size={24} />
           </div>
           <div className="stat-content">

@@ -150,7 +150,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
     setProcessing(true)
     try {
       // Find all unpaid expenses where fromId owes toId
-      const unpaidExpenses = expenses.filter(expense => {
+      const fromOwesToExpenses = expenses.filter(expense => {
         const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
         if (paidById !== paymentModal.toId) return false
         
@@ -161,15 +161,29 @@ function ExpenseList({ expenses, members, onRefresh }) {
         })
       })
 
-      if (unpaidExpenses.length === 0) {
+      // Find all unpaid expenses where toId owes fromId (reverse direction)
+      const toOwesFromExpenses = expenses.filter(expense => {
+        const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
+        if (paidById !== paymentModal.fromId) return false
+        
+        // Check if toId is in splitWith and hasn't paid
+        return expense.splitWith.some(member => {
+          const memberId = typeof member === 'object' ? member._id : member
+          return memberId === paymentModal.toId && !getPaymentStatus(expense, memberId)
+        })
+      })
+
+      const allUnpaidExpenses = [...fromOwesToExpenses, ...toOwesFromExpenses]
+
+      if (allUnpaidExpenses.length === 0) {
         alert('No unpaid expenses found.')
         setPaymentModal(null)
         setProcessing(false)
         return
       }
 
-      // Mark all as paid
-      for (const expense of unpaidExpenses) {
+      // Mark all expenses in both directions as paid
+      for (const expense of fromOwesToExpenses) {
         await fetch(
           `${API_URL}/expenses/${expense._id}/payment/${paymentModal.fromId}`,
           {
@@ -180,8 +194,19 @@ function ExpenseList({ expenses, members, onRefresh }) {
         )
       }
 
+      for (const expense of toOwesFromExpenses) {
+        await fetch(
+          `${API_URL}/expenses/${expense._id}/payment/${paymentModal.toId}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paid: true })
+          }
+        )
+      }
+
       if (onRefresh) await onRefresh()
-      alert(`Payment confirmed!\n${paymentModal.fromName} paid ${paymentModal.toName} ₱${paymentModal.amount.toFixed(2)}\n\n${unpaidExpenses.length} expense(s) marked as paid.`)
+      alert(`Payment confirmed!\n${paymentModal.fromName} paid ${paymentModal.toName} ₱${paymentModal.amount.toFixed(2)}\n\n${allUnpaidExpenses.length} expense(s) marked as paid (both directions settled).`)
       setPaymentModal(null)
     } catch (error) {
       console.error('Error marking payment:', error)
@@ -210,7 +235,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
       {/* Statistics Cards at Top */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+          <div className="stat-icon" style={{ background: '#3282B8' }}>
             <TrendingUp size={24} />
           </div>
           <div className="stat-content">
@@ -221,7 +246,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+          <div className="stat-icon" style={{ background: '#10b981' }}>
             <CreditCard size={24} />
           </div>
           <div className="stat-content">
@@ -232,7 +257,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+          <div className="stat-icon" style={{ background: '#f59e0b' }}>
             <ArrowRightLeft size={24} />
           </div>
           <div className="stat-content">
@@ -243,7 +268,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #ec4899, #be185d)' }}>
+          <div className="stat-icon" style={{ background: '#BBE1FA' }}>
             <BarChart3 size={24} />
           </div>
           <div className="stat-content">
