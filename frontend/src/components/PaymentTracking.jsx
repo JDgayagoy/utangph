@@ -6,7 +6,8 @@ import {
   XCircle,
   TrendingUp,
   Users,
-  DollarSign
+  DollarSign,
+  Search
 } from 'lucide-react'
 
 function PaymentTracking({ expenses = [], members = [], onRefresh }) {
@@ -17,6 +18,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterPayer, setFilterPayer] = useState('all')
   const [filterSplitWith, setFilterSplitWith] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const updatePaymentStatus = async (expenseId, memberId, currentStatus) => {
     setUpdatingPayment(`${expenseId}-${memberId}`)
@@ -77,6 +79,24 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
   const filteredAndSortedExpenses = useMemo(() => {
     let filtered = [...expenses]
 
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(expense => {
+        const matchDescription = expense.description?.toLowerCase().includes(query)
+        const paidByName = expense.paidBy?.name || members.find(m => m._id === (expense.paidBy?._id ?? expense.paidBy))?.name || ''
+        const matchPaidBy = paidByName.toLowerCase().includes(query)
+        
+        // Check if any split member matches
+        const matchSplitWith = expense.splitWith?.some(member => {
+          const memberName = member?.name || members.find(m => m._id === (member?._id ?? member))?.name || ''
+          return memberName.toLowerCase().includes(query)
+        })
+        
+        return matchDescription || matchPaidBy || matchSplitWith
+      })
+    }
+
     if (filterPayer !== 'all') {
       filtered = filtered.filter(
         exp => (exp?.paidBy?._id ?? exp?.paidBy) === filterPayer
@@ -120,7 +140,7 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
       default:
         return filtered
     }
-  }, [expenses, sortBy, filterStatus, filterPayer, filterSplitWith])
+  }, [expenses, sortBy, filterStatus, filterPayer, filterSplitWith, searchQuery, members])
 
   const statistics = useMemo(() => {
     let fullyPaid = 0
@@ -236,6 +256,16 @@ function PaymentTracking({ expenses = [], members = [], onRefresh }) {
       <div className="card">
         <div className="card-header">
           <h2><Users size={28} /> Expense Payment Tracking</h2>
+        </div>
+        <div className="archive-controls">
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search expenses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
         <div className="filter-controls">
           <div className="filter-group">

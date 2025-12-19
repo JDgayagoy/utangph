@@ -400,6 +400,31 @@
   font-size: 11px;
   transition: all var(--transition-base);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.nav-tag-avatar .avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.nav-tag-avatar .avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: inherit;
+}
+
+.nav-tag-avatar.avatar-placeholder {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
 }
 
 .nav-tag:hover .nav-tag-avatar {
@@ -468,6 +493,141 @@
   border: 3px solid var(--color-tertiary);
   position: relative;
   z-index: 1;
+  overflow: hidden;
+}
+
+.member-avatar .avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.member-avatar .avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: inherit;
+}
+
+.member-avatar.avatar-placeholder {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
+}
+
+.member-avatar-large {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  border: 4px solid var(--color-tertiary);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.member-avatar-large .avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.member-avatar-large .avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: inherit;
+}
+
+.member-avatar-large.avatar-placeholder {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
+}
+
+.member-avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  background: var(--color-primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  color: white;
+  font-size: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.avatar-edit-btn:hover {
+  background: var(--color-primary-dark);
+  transform: scale(1.1);
+}
+
+.profile-picture-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.current-avatar, .preview-avatar {
+  text-align: center;
+}
+
+.current-avatar h4, .preview-avatar h4 {
+  margin: 0 0 var(--space-3) 0;
+  color: var(--color-gray-700);
+  font-size: var(--font-size-lg);
+}
+
+.upload-section {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.upload-btn, .remove-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.upload-hint {
+  text-align: center;
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  max-width: 300px;
 }
 
 .member-info {
@@ -824,6 +984,31 @@ button.secondary:active {
   color: white;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  overflow: hidden;
+}
+
+.member-avatar-small .avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.member-avatar-small .avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: inherit;
+}
+
+.member-avatar-small.avatar-placeholder {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
 }
 
 .member-section {
@@ -4674,7 +4859,7 @@ button.secondary:active {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  background: #10b981;
+  background: #0F4C75;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4741,7 +4926,7 @@ button.secondary:active {
 .transaction-amount {
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--color-success);
+  color: #0F4C75;
   letter-spacing: -0.02em;
   white-space: nowrap;
 }

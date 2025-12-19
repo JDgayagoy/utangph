@@ -127,6 +127,29 @@ router.put('/:id', async (req, res) => {
   }
 })
 
+// Update member profile picture
+router.patch('/:id/profile-picture', upload.single('profilePicture'), async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+
+    if (req.file) {
+      // Convert image to base64
+      const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+      member.profilePicture = imageData
+    } else if (req.body.removeProfilePicture) {
+      member.profilePicture = null
+    }
+
+    const updatedMember = await member.save()
+    res.json(updatedMember)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
 // Toggle member active status
 router.patch('/:id', async (req, res) => {
   try {

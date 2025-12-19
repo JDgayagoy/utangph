@@ -20,6 +20,10 @@ const memberSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  profilePicture: {
+    type: String,
+    default: null
+  },
   groupId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Group',

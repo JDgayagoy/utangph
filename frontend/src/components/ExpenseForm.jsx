@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Save, X, UserPlus } from 'lucide-react'
+import MemberAvatar from './MemberAvatar'
 
 function ExpenseForm({ members, onAddExpense }) {
   // Create separate items state for each member
@@ -140,7 +141,7 @@ function ExpenseForm({ members, onAddExpense }) {
                   className="nav-tag"
                   onClick={() => scrollToMember(member._id)}
                 >
-                  <div className="nav-tag-avatar">{member.name.charAt(0).toUpperCase()}</div>
+                  <MemberAvatar member={member} size="nav" />
                   <span>{member.name}'s Items</span>
                 </button>
               ))}
@@ -155,7 +156,7 @@ function ExpenseForm({ members, onAddExpense }) {
           return (
             <div key={member._id} id={`member-section-${member._id}`} className="card member-section">
               <div className="section-header">
-                <div className="member-avatar-small">{member.name.charAt(0).toUpperCase()}</div>
+                <MemberAvatar member={member} size="small" />
                 <h3>{member.name}'s Items</h3>
               </div>
               <form onSubmit={(e) => handleSubmit(e, member._id)} className="items-form">

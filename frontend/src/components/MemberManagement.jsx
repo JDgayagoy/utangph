@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Users, UserPlus, QrCode, X, Upload, Check, Image, Edit2, Trash2 } from 'lucide-react'
+import { Users, UserPlus, QrCode, X, Upload, Check, Image, Edit2, Trash2, Camera } from 'lucide-react'
+import MemberAvatar from './MemberAvatar'
 
 function MemberManagement({ members, onAddMember, onRefresh, expenses = [] }) {
   const [name, setName] = useState('')
@@ -9,6 +10,9 @@ function MemberManagement({ members, onAddMember, onRefresh, expenses = [] }) {
   const [editingQr, setEditingQr] = useState(null)
   const [viewingQr, setViewingQr] = useState(null)
   const [confirmToggle, setConfirmToggle] = useState(null)
+  const [editingProfilePicture, setEditingProfilePicture] = useState(null)
+  const [profilePictureFile, setProfilePictureFile] = useState(null)
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null)
   const [qrFormData, setQrFormData] = useState({
     label: '',
     imageFile: null,
@@ -102,6 +106,81 @@ function MemberManagement({ members, onAddMember, onRefresh, expenses = [] }) {
 
     onAddMember({ name: name.trim() })
     setName('')
+  }
+
+  const startEditingProfilePicture = (memberId) => {
+    setEditingProfilePicture(memberId)
+    setProfilePictureFile(null)
+    setProfilePicturePreview(null)
+  }
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB')
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
+      }
+      setProfilePictureFile(file)
+      setProfilePicturePreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleUpdateProfilePicture = async (memberId) => {
+    if (!profilePictureFile) return
+
+    try {
+      const formData = new FormData()
+      formData.append('profilePicture', profilePictureFile)
+
+      const response = await fetch(`${API_URL}/members/${memberId}/profile-picture`, {
+        method: 'PATCH',
+        body: formData
+      })
+
+      if (response.ok) {
+        setEditingProfilePicture(null)
+        setProfilePictureFile(null)
+        setProfilePicturePreview(null)
+        onRefresh()
+      } else {
+        alert('Failed to update profile picture')
+      }
+    } catch (error) {
+      console.error('Error updating profile picture:', error)
+      alert('Failed to update profile picture')
+    }
+  }
+
+  const handleRemoveProfilePicture = async (memberId) => {
+    if (!confirm('Are you sure you want to remove the profile picture?')) return
+
+    try {
+      const response = await fetch(`${API_URL}/members/${memberId}/profile-picture`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeProfilePicture: true })
+      })
+
+      if (response.ok) {
+        onRefresh()
+      } else {
+        alert('Failed to remove profile picture')
+      }
+    } catch (error) {
+      console.error('Error removing profile picture:', error)
+      alert('Failed to remove profile picture')
+    }
+  }
+
+  const cancelEditingProfilePicture = () => {
+    setEditingProfilePicture(null)
+    setProfilePictureFile(null)
+    setProfilePicturePreview(null)
   }
 
   const handleFileChange = (e) => {
@@ -246,7 +325,16 @@ function MemberManagement({ members, onAddMember, onRefresh, expenses = [] }) {
           <div className="members-grid">
             {members.map(member => (
               <div key={member._id} className={`member-card ${member.isActive === false ? 'inactive' : ''}`}>
-                <div className="member-avatar">{member.name.charAt(0).toUpperCase()}</div>
+                <div className="member-avatar-container">
+                  <MemberAvatar member={member} size="medium" />
+                  <button 
+                    className="avatar-edit-btn"
+                    onClick={() => startEditingProfilePicture(member._id)}
+                    title="Change profile picture"
+                  >
+                    <Camera size={16} />
+                  </button>
+                </div>
                 <div className="member-info">
                   <span className="member-name">{member.name}</span>
                   {member.isActive === false && <span className="inactive-badge">Inactive</span>}
@@ -537,6 +625,85 @@ function MemberManagement({ members, onAddMember, onRefresh, expenses = [] }) {
               <img src={viewingQr.imageData} alt={viewingQr.label} />
             </div>
             <p className="qr-modal-instruction">Scan this QR code to make a payment</p>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Picture Edit Modal */}
+      {editingProfilePicture && (
+        <div className="modal-overlay" onClick={() => cancelEditingProfilePicture()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Update Profile Picture</h2>
+              <button className="modal-close" onClick={() => cancelEditingProfilePicture()}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="profile-picture-editor">
+                <div className="current-avatar">
+                  <h4>Current:</h4>
+                  <MemberAvatar 
+                    member={members.find(m => m._id === editingProfilePicture)} 
+                    size="large"
+                  />
+                </div>
+                
+                {profilePicturePreview && (
+                  <div className="preview-avatar">
+                    <h4>Preview:</h4>
+                    <div className="member-avatar-large">
+                      <img src={profilePicturePreview} alt="Preview" className="avatar-image" />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="upload-section">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    style={{ display: 'none' }}
+                    id="profile-picture-input"
+                  />
+                  <button
+                    onClick={() => document.getElementById('profile-picture-input')?.click()}
+                    className="btn-primary upload-btn"
+                  >
+                    <Upload size={18} />
+                    Choose New Picture
+                  </button>
+                  
+                  {members.find(m => m._id === editingProfilePicture)?.profilePicture && (
+                    <button
+                      onClick={() => handleRemoveProfilePicture(editingProfilePicture)}
+                      className="btn-danger remove-btn"
+                    >
+                      <Trash2 size={18} />
+                      Remove Picture
+                    </button>
+                  )}
+                </div>
+                
+                <p className="upload-hint">
+                  Choose a square image for best results. Max size: 5MB
+                </p>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => cancelEditingProfilePicture()}>
+                Cancel
+              </button>
+              {profilePictureFile && (
+                <button 
+                  className="btn-primary" 
+                  onClick={() => handleUpdateProfilePicture(editingProfilePicture)}
+                >
+                  <Check size={18} />
+                  Update Picture
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
