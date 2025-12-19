@@ -133,17 +133,26 @@ function Archive({ expenses, members, onRefresh }) {
     const totalTransactions = filteredTransactions.length
     const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.shareAmount, 0)
     
+    // Initialize all members with 0 values
     const byMember = {}
-    filteredTransactions.forEach(t => {
-      if (!byMember[t.paidForId]) {
-        byMember[t.paidForId] = { name: t.paidFor, count: 0, amount: 0 }
+    members.forEach(member => {
+      byMember[member._id] = { 
+        name: member.name, 
+        count: 0, 
+        amount: 0 
       }
-      byMember[t.paidForId].count++
-      byMember[t.paidForId].amount += t.shareAmount
+    })
+    
+    // Add payment data for members who have made payments
+    filteredTransactions.forEach(t => {
+      if (byMember[t.paidForId]) {
+        byMember[t.paidForId].count++
+        byMember[t.paidForId].amount += t.shareAmount
+      }
     })
 
     return { totalTransactions, totalAmount, byMember }
-  }, [filteredTransactions])
+  }, [filteredTransactions, members])
 
   // Reverse payment
   const handleReversePayment = async () => {
@@ -238,7 +247,7 @@ function Archive({ expenses, members, onRefresh }) {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search transactions..."
+              placeholder=""
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -323,7 +332,7 @@ function Archive({ expenses, members, onRefresh }) {
               <div key={transaction.id} className="transaction-item">
                 <div className="transaction-main">
                   <div className="transaction-icon">
-                    <CheckCircle size={24} color="#10b981" />
+                    <CheckCircle size={24} style={{ color: 'white' }} />
                   </div>
                   
                   <div className="transaction-details">
@@ -377,7 +386,7 @@ function Archive({ expenses, members, onRefresh }) {
       </div>
 
       {/* Member Summary */}
-      {Object.keys(statistics.byMember).length > 0 && (
+      {members && members.length > 0 && (
         <div className="card">
           <h2>Payment Summary by Member</h2>
           <div className="member-summary-grid">
