@@ -24,7 +24,10 @@ router.get('/', async (req, res) => {
   try {
     const { groupId } = req.query
     const filter = groupId ? { groupId } : {}
-    const members = await Member.find(filter).sort({ name: 1 })
+    const members = await Member.find(filter)
+      .select('name groupId qrCodes')
+      .sort({ name: 1 })
+      .lean()
     res.json(members)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -35,6 +38,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
+      .select('name groupId qrCodes')
+      .lean()
     if (!member) {
       return res.status(404).json({ message: 'Member not found' })
     }
@@ -48,9 +53,13 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/balance', async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
+      .select('name groupId')
+      .lean()
     if (!member) {
       return res.status(404).json({ message: 'Member not found' })
     }
+
+    const { limit = 50, skip = 0 } = req.query
 
     // Get all expenses involving this member within the same group
     const expenses = await Expense.find({
@@ -60,35 +69,53 @@ router.get('/:id/balance', async (req, res) => {
         { splitWith: req.params.id }
       ]
     })
+      .select('description amount date paidBy splitWith')
       .populate('paidBy', 'name')
       .populate('splitWith', 'name')
       .sort({ date: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .lean()
+
+    // Calculate totals from all expenses (not just paginated)
+    const allExpensesForBalance = await Expense.find({
+      groupId: member.groupId,
+      $or: [
+        { paidBy: req.params.id },
+        { splitWith: req.params.id }
+      ]
+    })
+      .select('amount paidBy splitWith')
+      .lean()
 
     let totalPaid = 0
     let totalOwed = 0
 
-    expenses.forEach(expense => {
+    allExpensesForBalance.forEach(expense => {
       const sharePerPerson = expense.amount / expense.splitWith.length
 
       // If this member paid
-      if (expense.paidBy._id.toString() === req.params.id) {
+      if (expense.paidBy.toString() === req.params.id) {
         totalPaid += expense.amount
       }
 
       // If this member is in the split
-      if (expense.splitWith.some(m => m._id.toString() === req.params.id)) {
+      if (expense.splitWith.some(m => m.toString() === req.params.id)) {
         totalOwed += sharePerPerson
       }
     })
 
     const balance = totalPaid - totalOwed
+    const total = allExpensesForBalance.length
 
     res.json({
       member,
       totalPaid,
       totalOwed,
       balance,
-      expenses
+      expenses,
+      total,
+      hasMore: skip + expenses.length < total
     })
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -127,21 +154,22 @@ router.put('/:id', async (req, res) => {
   }
 })
 
-// Get all QR codes for a member (MUST be before /:id routes)
-router.get('/:id/qrcodes', async (req, res) => {
+// Delete member
+router.delete('/:id', async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
     if (!member) {
       return res.status(404).json({ message: 'Member not found' })
     }
-    
-    res.json(member.qrCodes)
+
+    await member.deleteOne()
+    res.json({ message: 'Member deleted' })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
 })
 
-// Add QR code to member (MUST be before /:id routes)
+// Add QR code to member
 router.post('/:id/qrcodes', upload.single('image'), async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
@@ -167,7 +195,23 @@ router.post('/:id/qrcodes', upload.single('image'), async (req, res) => {
   }
 })
 
-// Update QR code (MUST be before /:id routes)
+// Get all QR codes for a member
+router.get('/:id/qrcodes', async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+      .select('qrCodes')
+      .lean()
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' })
+    }
+    
+    res.json(member.qrCodes)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+// Update QR code
 router.put('/:id/qrcodes/:qrId', upload.single('image'), async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
@@ -193,7 +237,7 @@ router.put('/:id/qrcodes/:qrId', upload.single('image'), async (req, res) => {
   }
 })
 
-// Delete QR code (MUST be before /:id routes)
+// Delete QR code
 router.delete('/:id/qrcodes/:qrId', async (req, res) => {
   try {
     const member = await Member.findById(req.params.id)
@@ -205,63 +249,6 @@ router.delete('/:id/qrcodes/:qrId', async (req, res) => {
     await member.save()
     
     res.json(member)
-  } catch (error) {
-    res.status(500).json({ message: error.message })
-  }
-})
-
-// Update member profile picture (MUST be before general /:id PATCH route)
-router.patch('/:id/profile-picture', upload.single('profilePicture'), async (req, res) => {
-  try {
-    const member = await Member.findById(req.params.id)
-    if (!member) {
-      return res.status(404).json({ message: 'Member not found' })
-    }
-
-    if (req.file) {
-      // Convert image to base64
-      const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
-      member.profilePicture = imageData
-    } else if (req.body.removeProfilePicture) {
-      member.profilePicture = null
-    }
-
-    const updatedMember = await member.save()
-    res.json(updatedMember)
-  } catch (error) {
-    res.status(400).json({ message: error.message })
-  }
-})
-
-// Toggle member active status (This general /:id route should be last)
-router.patch('/:id', async (req, res) => {
-  try {
-    const member = await Member.findById(req.params.id)
-    if (!member) {
-      return res.status(404).json({ message: 'Member not found' })
-    }
-
-    if (req.body.hasOwnProperty('isActive')) {
-      member.isActive = req.body.isActive
-    }
-
-    const updatedMember = await member.save()
-    res.json(updatedMember)
-  } catch (error) {
-    res.status(400).json({ message: error.message })
-  }
-})
-
-// Delete member
-router.delete('/:id', async (req, res) => {
-  try {
-    const member = await Member.findById(req.params.id)
-    if (!member) {
-      return res.status(404).json({ message: 'Member not found' })
-    }
-
-    await member.deleteOne()
-    res.json({ message: 'Member deleted' })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }

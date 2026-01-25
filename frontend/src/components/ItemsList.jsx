@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ClipboardList, Edit2, Trash2, Check, X, ArrowUpDown, Search } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { ClipboardList, Edit2, Trash2, Check, X, ArrowUpDown, Search, ChevronDown } from 'lucide-react'
 
 function ItemsList({ expenses, members, onRefresh }) {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
@@ -9,6 +9,8 @@ function ItemsList({ expenses, members, onRefresh }) {
   const [filterSplitWith, setFilterSplitWith] = useState('all')
   const [sortBy, setSortBy] = useState('date') // date, name, amount
   const [searchQuery, setSearchQuery] = useState('')
+  const [displayCount, setDisplayCount] = useState(20) // Start with 20 items
+  const ITEMS_PER_PAGE = 20
 
   const getMemberName = (memberId) => {
     const member = members.find(m => m._id === memberId)
@@ -101,8 +103,8 @@ function ItemsList({ expenses, members, onRefresh }) {
     )
   }
 
-  // Filter and sort expenses
-  const filteredAndSortedExpenses = (() => {
+  // Filter and sort expenses - memoized for performance
+  const filteredAndSortedExpenses = useMemo(() => {
     // First filter
     let filtered = expenses.filter(expense => {
       const paidById = typeof expense.paidBy === 'object' ? expense.paidBy._id : expense.paidBy
@@ -137,7 +139,22 @@ function ItemsList({ expenses, members, onRefresh }) {
       default:
         return filtered
     }
-  })()
+  }, [expenses, filterPayer, filterSplitWith, searchQuery, sortBy, members])
+
+  // Paginated items to display
+  const displayedExpenses = useMemo(() => {
+    return filteredAndSortedExpenses.slice(0, displayCount)
+  }, [filteredAndSortedExpenses, displayCount])
+
+  // Load more handler
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + ITEMS_PER_PAGE)
+  }
+
+  // Reset pagination when filters change
+  const resetPagination = () => {
+    setDisplayCount(ITEMS_PER_PAGE)
+  }
 
   return (
     <div className="items-page">
@@ -147,7 +164,7 @@ function ItemsList({ expenses, members, onRefresh }) {
           <div className="header-controls">
             <div className="filter-group clickable">
               <label htmlFor="filter-payer">Paid By:</label>
-              <select id="filter-payer" value={filterPayer} onChange={(e) => setFilterPayer(e.target.value)} className="filter-select">
+              <select id="filter-payer" value={filterPayer} onChange={(e) => { setFilterPayer(e.target.value); resetPagination(); }} className="filter-select">
                 <option value="all">All Payers</option>
                 {members.map(member => (
                   <option key={member._id} value={member._id}>{member.name}</option>
@@ -156,7 +173,7 @@ function ItemsList({ expenses, members, onRefresh }) {
             </div>
             <div className="filter-group clickable">
               <label htmlFor="filter-split">Split With:</label>
-              <select id="filter-split" value={filterSplitWith} onChange={(e) => setFilterSplitWith(e.target.value)} className="filter-select">
+              <select id="filter-split" value={filterSplitWith} onChange={(e) => { setFilterSplitWith(e.target.value); resetPagination(); }} className="filter-select">
                 <option value="all">All Members</option>
                 {members.map(member => (
                   <option key={member._id} value={member._id}>{member.name}</option>
@@ -165,7 +182,7 @@ function ItemsList({ expenses, members, onRefresh }) {
             </div>
             <div className="filter-group clickable">
               <label htmlFor="filter-sort"><ArrowUpDown size={16} /> Sort:</label>
-              <select id="filter-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="filter-select">
+              <select id="filter-sort" value={sortBy} onChange={(e) => { setSortBy(e.target.value); resetPagination(); }} className="filter-select">
                 <option value="date">Date (Newest)</option>
                 <option value="name">Name (A-Z)</option>
                 <option value="amount">Amount (High-Low)</option>
@@ -181,7 +198,7 @@ function ItemsList({ expenses, members, onRefresh }) {
               type="text"
               placeholder="Search items by description or member name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); resetPagination(); }}
               className="search-input-full"
             />
             {searchQuery && (
@@ -209,7 +226,7 @@ function ItemsList({ expenses, members, onRefresh }) {
             </tr>
           </thead>
           <tbody>
-            {filteredAndSortedExpenses.map(expense => {
+            {displayedExpenses.map(expense => {
               const isEditing = editingId === expense._id
               const sharePerPerson = calculateShare(
                 isEditing ? editForm.amount : expense.amount,
@@ -317,6 +334,17 @@ function ItemsList({ expenses, members, onRefresh }) {
           </tbody>
         </table>
       </div>
+      {displayedExpenses.length < filteredAndSortedExpenses.length && (
+        <div className="load-more-container">
+          <button onClick={handleLoadMore} className="load-more-btn">
+            <ChevronDown size={20} />
+            Load More ({filteredAndSortedExpenses.length - displayedExpenses.length} remaining)
+          </button>
+          <small style={{ color: '#64748b', marginTop: '8px' }}>
+            Showing {displayedExpenses.length} of {filteredAndSortedExpenses.length} items
+          </small>
+        </div>
+      )}
     </div>
     </div>
   )

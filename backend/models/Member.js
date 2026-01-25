@@ -20,23 +20,18 @@ const memberSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  profilePicture: {
-    type: String,
-    default: null
-  },
   groupId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Group',
     required: true
   },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
   qrCodes: [qrCodeSchema]
 }, {
   timestamps: true
 })
+
+// Add indexes for faster queries
+memberSchema.index({ groupId: 1, name: 1 }) // Compound index for group filtering and name sorting
 
 const Member = mongoose.model('Member', memberSchema)
 
