@@ -1,4 +1,5 @@
 import express from 'express'
+import mongoose from 'mongoose'
 import Expense from '../models/Expense.js'
 
 const router = express.Router()
@@ -6,14 +7,24 @@ const router = express.Router()
 // Get all expenses (filtered by groupId)
 router.get('/', async (req, res) => {
   try {
-    const { groupId } = req.query
+    const { groupId, limit = 50, skip = 0 } = req.query
     const filter = groupId ? { groupId } : {}
+    
+    // Use lean() for faster read-only queries and select only needed fields
     const expenses = await Expense.find(filter)
+      .select('description amount date paidBy splitWith payments')
       .populate('paidBy', 'name')
       .populate('splitWith', 'name')
       .populate('payments.memberId', 'name')
       .sort({ date: -1 })
-    res.json(expenses)
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .lean()
+    
+    // Get total count for pagination
+    const total = await Expense.countDocuments(filter)
+    
+    res.json({ expenses, total, hasMore: skip + expenses.length < total })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
@@ -23,8 +34,10 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id)
+      .select('description amount date paidBy splitWith payments groupId')
       .populate('paidBy', 'name')
       .populate('splitWith', 'name')
+      .lean()
     
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' })
@@ -96,21 +109,49 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
-// Get settlement summary (filtered by groupId)
+// Get settlement summary (filtered by groupId) - optimized with aggregation
 router.get('/settlements/summary', async (req, res) => {
   try {
     const { groupId } = req.query
-    const filter = groupId ? { groupId } : {}
-    const expenses = await Expense.find(filter)
-      .populate('paidBy', 'name')
-      .populate('splitWith', 'name')
-    
-    // Calculate balances and settlements
+    if (!groupId) {
+      return res.status(400).json({ message: 'groupId is required' })
+    }
+
+    // Use aggregation pipeline for faster calculation
+    const result = await Expense.aggregate([
+      { $match: { groupId: mongoose.Types.ObjectId(groupId) } },
+      {
+        $lookup: {
+          from: 'members',
+          localField: 'paidBy',
+          foreignField: '_id',
+          as: 'paidByMember'
+        }
+      },
+      {
+        $lookup: {
+          from: 'members',
+          localField: 'splitWith',
+          foreignField: '_id',
+          as: 'splitWithMembers'
+        }
+      },
+      { $unwind: '$paidByMember' },
+      {
+        $project: {
+          amount: 1,
+          paidBy: { _id: '$paidByMember._id', name: '$paidByMember.name' },
+          splitWith: '$splitWithMembers',
+          sharePerPerson: { $divide: ['$amount', { $size: '$splitWithMembers' }] }
+        }
+      }
+    ])
+
+    // Calculate balances from aggregation result
     const balances = {}
     
-    expenses.forEach(expense => {
-      const sharePerPerson = expense.amount / expense.splitWith.length
-      
+    result.forEach(expense => {
+      // Add amount for payer
       if (!balances[expense.paidBy._id]) {
         balances[expense.paidBy._id] = {
           name: expense.paidBy.name,
@@ -119,6 +160,7 @@ router.get('/settlements/summary', async (req, res) => {
       }
       balances[expense.paidBy._id].balance += expense.amount
       
+      // Subtract share from each split member
       expense.splitWith.forEach(member => {
         if (!balances[member._id]) {
           balances[member._id] = {
@@ -126,7 +168,7 @@ router.get('/settlements/summary', async (req, res) => {
             balance: 0
           }
         }
-        balances[member._id].balance -= sharePerPerson
+        balances[member._id].balance -= expense.sharePerPerson
       })
     })
     

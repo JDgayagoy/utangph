@@ -48,6 +48,12 @@ const expenseSchema = new mongoose.Schema({
   timestamps: true
 })
 
+// Add indexes for faster queries
+expenseSchema.index({ groupId: 1, date: -1 }) // Compound index for filtering by group and sorting by date
+expenseSchema.index({ paidBy: 1 })
+expenseSchema.index({ splitWith: 1 })
+expenseSchema.index({ 'payments.memberId': 1 })
+
 // Virtual field to calculate share per person
 expenseSchema.virtual('sharePerPerson').get(function() {
   return this.splitWith.length > 0 ? this.amount / this.splitWith.length : 0

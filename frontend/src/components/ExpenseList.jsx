@@ -23,8 +23,8 @@ function ExpenseList({ expenses, members, onRefresh }) {
     return payment ? payment.paid : false
   }
 
-  // Create a matrix showing who owes whom
-  const calculateOwesMatrix = () => {
+  // Create a matrix showing who owes whom - memoize for performance
+  const { balances, matrix } = useMemo(() => {
     const balances = {}
     
     // Initialize balances
@@ -87,7 +87,7 @@ function ExpenseList({ expenses, members, onRefresh }) {
     })
 
     return { balances, matrix }
-  }
+  }, [expenses, members])
 
   const handlePayClick = (fromMemberId, toMemberId, amount, fromName, toName) => {
     setPaymentModal({
@@ -227,8 +227,6 @@ function ExpenseList({ expenses, members, onRefresh }) {
       </div>
     )
   }
-
-  const { balances, matrix } = calculateOwesMatrix()
 
   return (
     <div className="settlement-page">

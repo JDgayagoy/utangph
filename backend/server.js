@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import compression from 'compression'
 import dotenv from 'dotenv'
 import connectDB from './config/db.js'
 import groupRoutes from './routes/groupRoutes.js'
@@ -20,6 +21,7 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions))
+app.use(compression()) // Enable gzip compression for faster data transfer
 app.use(express.json())
 
 // Ignore favicon requests

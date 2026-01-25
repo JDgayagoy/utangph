@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import GroupSelection from './components/GroupSelection'
 import ExpenseForm from './components/ExpenseForm'
@@ -16,6 +16,18 @@ function App() {
   const [expenses, setExpenses] = useState([])
   const [members, setMembers] = useState([])
   const [currentPage, setCurrentPage] = useState('settlement')
+  
+  // Track which data has been loaded to avoid refetching
+  const [loadedData, setLoadedData] = useState({
+    members: false,
+    expenses: false
+  })
+  
+  // Track loading state
+  const [isLoading, setIsLoading] = useState({
+    members: false,
+    expenses: false
+  })
 
   useEffect(() => {
     // Check if user has a stored group
@@ -31,41 +43,70 @@ function App() {
     }
   }, [])
 
+  // Lazy load data based on current page - only fetch when needed
   useEffect(() => {
-    // Fetch members and expenses when group is selected
-    if (currentGroup) {
+    if (!currentGroup) return
+
+    // Determine what data is needed for the current page
+    const needsMembers = ['members', 'add', 'items', 'settlement', 'archive', 'payments'].includes(currentPage)
+    const needsExpenses = ['items', 'settlement', 'archive', 'payments'].includes(currentPage)
+
+    // Fetch members if needed and not already loaded
+    if (needsMembers && !loadedData.members) {
       fetchMembers()
+    }
+
+    // Fetch expenses if needed and not already loaded
+    if (needsExpenses && !loadedData.expenses) {
       fetchExpenses()
     }
-  }, [currentGroup])
+  }, [currentGroup, currentPage, loadedData])
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async (forceRefresh = false) => {
     if (!currentGroup) return
+    
+    // Skip if already loaded and not forcing refresh
+    if (loadedData.members && !forceRefresh) return
+    
+    setIsLoading(prev => ({ ...prev, members: true }))
     try {
       const response = await fetch(`${API_URL}/members?groupId=${currentGroup._id}`)
       if (response.ok) {
         const data = await response.json()
         setMembers(data)
+        setLoadedData(prev => ({ ...prev, members: true }))
       }
     } catch (error) {
       console.error('Error fetching members:', error)
+    } finally {
+      setIsLoading(prev => ({ ...prev, members: false }))
     }
-  }
+  }, [currentGroup, loadedData.members, API_URL])
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async (forceRefresh = false) => {
     if (!currentGroup) return
+    
+    // Skip if already loaded and not forcing refresh
+    if (loadedData.expenses && !forceRefresh) return
+    
+    setIsLoading(prev => ({ ...prev, expenses: true }))
     try {
-      const response = await fetch(`${API_URL}/expenses?groupId=${currentGroup._id}`)
+      // Fetch with pagination - get first 100 expenses
+      const response = await fetch(`${API_URL}/expenses?groupId=${currentGroup._id}&limit=100&skip=0`)
       if (response.ok) {
         const data = await response.json()
-        setExpenses(data)
+        // Handle new paginated response format
+        setExpenses(data.expenses || data)
+        setLoadedData(prev => ({ ...prev, expenses: true }))
       }
     } catch (error) {
       console.error('Error fetching expenses:', error)
+    } finally {
+      setIsLoading(prev => ({ ...prev, expenses: false }))
     }
-  }
+  }, [currentGroup, loadedData.expenses, API_URL])
 
   const addExpense = async (expense) => {
     try {
@@ -75,7 +116,7 @@ function App() {
         body: JSON.stringify({ ...expense, groupId: currentGroup._id })
       })
       if (response.ok) {
-        fetchExpenses()
+        fetchExpenses(true) // Force refresh after adding
       }
     } catch (error) {
       console.error('Error adding expense:', error)
@@ -90,7 +131,7 @@ function App() {
         body: JSON.stringify({ ...member, groupId: currentGroup._id })
       })
       if (response.ok) {
-        fetchMembers()
+        fetchMembers(true) // Force refresh after adding
       }
     } catch (error) {
       console.error('Error adding member:', error)
@@ -100,14 +141,23 @@ function App() {
   const handleGroupSelect = (group) => {
     setCurrentGroup(group)
     localStorage.setItem('currentGroup', JSON.stringify(group))
+    // Reset loaded data cache when switching groups
+    setLoadedData({ members: false, expenses: false })
+    setMembers([])
+    setExpenses([])
   }
 
   const handleLogout = () => {
     setCurrentGroup(null)
     setMembers([])
     setExpenses([])
+    setLoadedData({ members: false, expenses: false })
     localStorage.removeItem('currentGroup')
   }
+
+  // Wrapper functions to force refresh
+  const handleRefreshMembers = () => fetchMembers(true)
+  const handleRefreshExpenses = () => fetchExpenses(true)
 
   // Show group selection if no group is selected
   if (!currentGroup) {
@@ -140,7 +190,7 @@ function App() {
             <MemberManagement 
               members={members} 
               onAddMember={addMember} 
-              onRefresh={fetchMembers}
+              onRefresh={handleRefreshMembers}
               expenses={expenses}
             />
           )}
@@ -156,14 +206,14 @@ function App() {
             <ItemsList 
               expenses={expenses} 
               members={members}
-              onRefresh={fetchExpenses}
+              onRefresh={handleRefreshExpenses}
             />
           )}
           {currentPage === 'settlement' && (
             <ExpenseList 
               expenses={expenses} 
               members={members}
-              onRefresh={fetchExpenses}
+              onRefresh={handleRefreshExpenses}
             />
           )}
           
@@ -171,7 +221,7 @@ function App() {
             <Archive 
               expenses={expenses} 
               members={members}
-              onRefresh={fetchExpenses}
+              onRefresh={handleRefreshExpenses}
             />
           )}
           
@@ -179,7 +229,7 @@ function App() {
             <PaymentTracking 
               expenses={expenses} 
               members={members}
-              onRefresh={fetchExpenses}
+              onRefresh={handleRefreshExpenses}
             />
           )}
         </main>

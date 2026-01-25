@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Archive as ArchiveIcon, Calendar, User, DollarSign, Search, Filter, RotateCcw, CheckCircle, AlertCircle, X } from 'lucide-react'
+import { Archive as ArchiveIcon, Calendar, User, DollarSign, Search, Filter, RotateCcw, CheckCircle, AlertCircle, X, ChevronDown } from 'lucide-react'
 
 function Archive({ expenses, members, onRefresh }) {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
@@ -12,6 +12,8 @@ function Archive({ expenses, members, onRefresh }) {
   const [sortBy, setSortBy] = useState('date-desc') // date-desc, date-asc, amount-desc, amount-asc
   const [confirmReverse, setConfirmReverse] = useState(null) // { expenseId, memberId, memberName, amount, description }
   const [processing, setProcessing] = useState(false)
+  const [displayCount, setDisplayCount] = useState(20) // Start with 20 transactions
+  const ITEMS_PER_PAGE = 20
 
   // Helper function to get payment status and details
   const getPaymentInfo = (expense, memberId) => {
@@ -154,6 +156,21 @@ function Archive({ expenses, members, onRefresh }) {
     return { totalTransactions, totalAmount, byMember }
   }, [filteredTransactions, members])
 
+  // Paginated transactions to display
+  const displayedTransactions = useMemo(() => {
+    return filteredTransactions.slice(0, displayCount)
+  }, [filteredTransactions, displayCount])
+
+  // Load more handler
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + ITEMS_PER_PAGE)
+  }
+
+  // Reset pagination when filters change
+  const resetPagination = () => {
+    setDisplayCount(ITEMS_PER_PAGE)
+  }
+
   // Reverse payment
   const handleReversePayment = async () => {
     if (!confirmReverse) return
@@ -248,14 +265,14 @@ function Archive({ expenses, members, onRefresh }) {
               type="text"
               placeholder="Search transactions..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); resetPagination(); }}
             />
           </div>
 
           <div className="filter-controls">
             <div className="filter-group">
               <Filter size={16} />
-              <select value={filterMember} onChange={(e) => setFilterMember(e.target.value)}>
+              <select value={filterMember} onChange={(e) => { setFilterMember(e.target.value); resetPagination(); }}>
                 <option value="all">All Members</option>
                 {members.map(member => (
                   <option key={member._id} value={member._id}>{member.name}</option>
@@ -264,7 +281,7 @@ function Archive({ expenses, members, onRefresh }) {
             </div>
 
             <div className="filter-group">
-              <select value={filterPaidBy} onChange={(e) => setFilterPaidBy(e.target.value)}>
+              <select value={filterPaidBy} onChange={(e) => { setFilterPaidBy(e.target.value); resetPagination(); }}>
                 <option value="all">Paid To (All)</option>
                 {members.map(member => (
                   <option key={member._id} value={member._id}>{member.name}</option>
@@ -274,7 +291,7 @@ function Archive({ expenses, members, onRefresh }) {
 
             <div className="filter-group">
               <Calendar size={16} />
-              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+              <select value={dateFilter} onChange={(e) => { setDateFilter(e.target.value); resetPagination(); }}>
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
                 <option value="week">Last 7 Days</option>
@@ -288,20 +305,20 @@ function Archive({ expenses, members, onRefresh }) {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => { setStartDate(e.target.value); resetPagination(); }}
                   className="date-input"
                 />
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => { setEndDate(e.target.value); resetPagination(); }}
                   className="date-input"
                 />
               </>
             )}
 
             <div className="filter-group">
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); resetPagination(); }}>
                 <option value="date-desc">Newest First</option>
                 <option value="date-asc">Oldest First</option>
                 <option value="amount-desc">Highest Amount</option>
@@ -326,8 +343,9 @@ function Archive({ expenses, members, onRefresh }) {
             <small>Completed payments will appear here for tracking and auditing</small>
           </div>
         ) : (
+          <>
           <div className="transactions-list">
-            {filteredTransactions.map(transaction => (
+            {displayedTransactions.map(transaction => (
               <div key={transaction.id} className="transaction-item">
                 <div className="transaction-main">
                   <div className="transaction-icon">
@@ -381,6 +399,18 @@ function Archive({ expenses, members, onRefresh }) {
               </div>
             ))}
           </div>
+          {displayedTransactions.length < filteredTransactions.length && (
+            <div className="load-more-container">
+              <button onClick={handleLoadMore} className="load-more-btn">
+                <ChevronDown size={20} />
+                Load More ({filteredTransactions.length - displayedTransactions.length} remaining)
+              </button>
+              <small style={{ color: '#64748b', marginTop: '8px' }}>
+                Showing {displayedTransactions.length} of {filteredTransactions.length} transactions
+              </small>
+            </div>
+          )}
+          </>
         )}
       </div>
 
